@@ -7,6 +7,7 @@ import random
 import asyncio
 import json
 import uuid
+import ssl
 import websockets
 import io
 import struct
@@ -313,13 +314,24 @@ async def _async_text_to_audio(
     headers = {
         "Authorization": f"Bearer;{access_token}",
     }
+    
     logger.info(f"连接到 {endpoint}")
+    
+    # SSL配置：默认验证，特殊网络环境可通过环境变量禁用
+    connect_params = {
+        "additional_headers": headers,
+        "max_size": 10 * 1024 * 1024
+    }
+    
+    if not config.BYTEDANCE_TTS_VERIFY_SSL:
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        connect_params["ssl"] = ssl_context
+        logger.warning("SSL验证已禁用，仅建议在企业网络等特殊环境下使用")
+    
     try:
-        websocket = await websockets.connect(
-            endpoint,
-            additional_headers=headers,
-            max_size=10 * 1024 * 1024
-        )
+        websocket = await websockets.connect(endpoint, **connect_params)
         logid = getattr(websocket, "response_headers", {}).get('x-tt-logid', 'unknown')
         logger.info(f"WebSocket连接成功，Logid: {logid}")
         request_data = {

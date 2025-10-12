@@ -164,12 +164,6 @@ BYTEDANCE_TTS_ACCESS_TOKEN=your_token
 
 ## 🛠️ 高级功能
 
-### Web界面模式
-```bash
-cd web && python start_web.py
-# 访问 http://localhost:3000 使用图形界面
-```
-
 ### 独立工具
 ```bash
 # 文档统计分析
@@ -222,6 +216,36 @@ A: 使用分步模式，每步生成的docx文件都可编辑后重新处理。
 A: 制作一个5分钟视频的总成本约2-5元人民币。
 
 ## 🔧 故障排除
+
+### SSL证书验证失败
+
+**错误信息**：`[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain`
+
+**可能原因**：
+- 企业/学校网络的SSL拦截代理
+- 安全软件的HTTPS扫描功能（如卡巴斯基、诺顿等）
+- VPN或代理软件干扰
+
+**解决方法**（按推荐顺序）：
+1. **更新证书库**（推荐）：
+   ```bash
+   pip install --upgrade certifi
+   ```
+   
+2. **macOS系统**：运行Python安装目录下的证书安装脚本：
+   ```bash
+   /Applications/Python\ 3.x/Install\ Certificates.command
+   ```
+
+3. **企业网络**：联系IT部门获取公司根证书并安装
+
+4. **临时方案**（不推荐）：在 `.env` 文件中添加以下配置禁用SSL验证：
+   ```env
+   BYTEDANCE_TTS_VERIFY_SSL=false
+   ```
+   ⚠️ 注意：此方法会降低安全性，仅建议在特殊网络环境下临时使用
+
+### 其他常见问题
 
 1. **检查依赖与路径**：确认已安装依赖，项目根目录存在 `config.py`、`core/`、`cli/`。
 2. **日志查看**：`cli/cli.log` 或控制台输出

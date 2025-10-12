@@ -24,7 +24,7 @@ DEFAULT_GENERATION_PARAMS = {
 
     "image_size": "2560x1440",                      # 图像尺寸 (常用 16:9 横屏，Qwen-Image固定支持)
     "image_model": "doubao-seedream-4-0-250828",    # 图像生成模型
-    "image_style_preset": "style02",                # 图像风格预设 (详见 prompts.py)
+    "image_style_preset": "style01",                # 图像风格预设 (详见 prompts.py)
     "opening_image_style": "des01",                 # 开场图像风格 (详见 prompts.py)
     "images_method": "description",                 # 配图生成方式: keywords / description
 
@@ -55,12 +55,12 @@ LLM_TEMPERATURE_SCRIPT = 0.7            # 脚本生成随机性 (0-1，越大越
 LLM_TEMPERATURE_KEYWORDS = 0.5          # 要点提取随机性 (0-1，越大越随机)
 
 # ==================== 音频控制参数 ====================
-BGM_DEFAULT_VOLUME = 0.22               # 背景音乐音量 (0=静音, 1=原音, >1放大, 推荐0.03-0.20)
+BGM_DEFAULT_VOLUME = 0.25               # 背景音乐音量 (0=静音, 1=原音, >1放大, 推荐0.03-0.20)
 NARRATION_DEFAULT_VOLUME = 2.0          # 口播音量 (0.5-3.0, 推荐0.8-1.5, >2.0有削波风险)
-AUDIO_DUCKING_ENABLED = False           # 口播时是否压低BGM
+AUDIO_DUCKING_ENABLED = True           # 口播时是否压低BGM
 AUDIO_DUCKING_STRENGTH = 0.3            # BGM压低强度 (0-1)
 AUDIO_DUCKING_SMOOTH_SECONDS = 0.12     # 音量过渡平滑时间 (秒)
-NARRATION_SPEED_FACTOR = 1.0            # 口播变速系数 (1.0=原速)
+NARRATION_SPEED_FACTOR = 1.1            # 口播变速系数 (1.0=原速)
 
 # ==================== 视觉效果时间参数 ====================
 OPENING_FADEIN_SECONDS = 2.0                    # 开场渐显时长 (秒)
@@ -167,6 +167,7 @@ class Config:
     BYTEDANCE_TTS_APPID = os.getenv('BYTEDANCE_TTS_APPID')
     BYTEDANCE_TTS_ACCESS_TOKEN = os.getenv('BYTEDANCE_TTS_ACCESS_TOKEN')
     BYTEDANCE_TTS_SECRET_KEY = os.getenv('BYTEDANCE_TTS_SECRET_KEY')
+    BYTEDANCE_TTS_VERIFY_SSL = os.getenv('BYTEDANCE_TTS_VERIFY_SSL', 'true').lower() == 'true'
     
     # ==================== API 端点配置 ====================
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
