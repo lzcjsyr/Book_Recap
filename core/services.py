@@ -151,23 +151,23 @@ def text_to_audio_bytedance(
     text,
     output_filename,
     voice="zh_male_yuanboxiaoshu_moon_bigtts",
-    encoding="wav",
+    encoding="mp3",
     speech_rate: int = 0,
     loudness_rate: int = 0,
     bit_rate: int = 128000,
     emotion: str = "neutral",
     emotion_scale: int = 4,
-    mute_cut_remain_ms: int = 400,
-    mute_cut_threshold: int = 100,
+    mute_cut_remain_ms: int = 100,
+    mute_cut_threshold: int = 400,
 ):
     """
     使用火山引擎TTS API进行语音合成（HTTP 单向流式接口）
 
     Args:
         text: 要合成的文本
-        output_filename: 输出文件路径（.wav格式）
+        output_filename: 输出文件路径（.mp3格式）
         voice: 音色ID
-        encoding: 输出编码格式（保留参数，实际输出为wav）
+        encoding: 输出编码格式（保留参数，实际输出为mp3）
         speech_rate: 语速 (-50到100, 0=正常, 100=2倍速, -50=0.5倍速)
         loudness_rate: 音量 (-50到100, 0=正常, 100=2倍音量, -50=0.5倍音量)
         bit_rate: 音频比特率 (64000-140000)
@@ -286,33 +286,17 @@ def text_to_audio_bytedance(
         
         if not audio_data:
             raise APIError("未接收到音频数据")
-        
+
         # ============ 6. 保存音频文件 ============
         from core.utils import ensure_directory_exists
         ensure_directory_exists(os.path.dirname(output_filename))
-        
-        # 先保存为临时 mp3 文件
-        temp_mp3 = output_filename.rsplit('.', 1)[0] + '_temp.mp3'
-        with open(temp_mp3, "wb") as f:
+
+        # 直接保存为 MP3 文件
+        with open(output_filename, "wb") as f:
             f.write(audio_data)
-        
-        # 根据需要转换为 wav 格式
-        if encoding.lower() == "wav" or output_filename.lower().endswith('.wav'):
-            try:
-                from moviepy.audio.io.AudioFileClip import AudioFileClip
-                audio_clip = AudioFileClip(temp_mp3)
-                audio_clip.write_audiofile(output_filename, codec='pcm_s16le', logger=None)
-                audio_clip.close()
-                os.remove(temp_mp3)
-                logger.info(f"语音合成成功 - 文件大小: {len(audio_data)/1024:.1f} KB, 已保存为 WAV: {output_filename}")
-            except Exception as e:
-                logger.error(f"MP3转WAV失败: {str(e)}, 保留MP3格式")
-                os.rename(temp_mp3, output_filename)
-                logger.warning(f"语音合成成功 - 文件大小: {len(audio_data)/1024:.1f} KB, 已保存为 MP3: {output_filename}")
-        else:
-            os.rename(temp_mp3, output_filename)
-            logger.info(f"语音合成成功 - 文件大小: {len(audio_data)/1024:.1f} KB, 已保存为 MP3: {output_filename}")
-        
+
+        logger.info(f"语音合成成功 - 文件大小: {len(audio_data)/1024:.1f} KB, 已保存为 MP3: {output_filename}")
+
         return True
         
     except APIError:

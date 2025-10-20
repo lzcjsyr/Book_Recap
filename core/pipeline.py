@@ -92,8 +92,8 @@ def _ensure_opening_narration(
     bit_rate: int = 128000,
     emotion: str = "neutral",
     emotion_scale: int = 4,
-    mute_cut_remain_ms: int = 400,
-    mute_cut_threshold: int = 100,
+    mute_cut_remain_ms: int = 100,
+    mute_cut_threshold: int = 400,
 ) -> Optional[str]:
     """Generate or reuse opening narration audio when required."""
     opening_golden_quote = (script_data or {}).get("golden_quote", "")
@@ -102,7 +102,7 @@ def _ensure_opening_narration(
 
     try:
         os.makedirs(voice_dir, exist_ok=True)
-        opening_path = os.path.join(voice_dir, "opening.wav")
+        opening_path = os.path.join(voice_dir, "opening.mp3")
         if force_regenerate and os.path.exists(opening_path):
             try:
                 os.remove(opening_path)
@@ -119,7 +119,7 @@ def _ensure_opening_narration(
             opening_golden_quote,
             opening_path,
             voice=voice,
-            encoding="wav",
+            encoding="mp3",
             speech_rate=speech_rate,
             loudness_rate=loudness_rate,
             bit_rate=bit_rate,
@@ -153,8 +153,8 @@ def _invoke_opening_narration(
     bit_rate: int = 128000,
     emotion: str = "neutral",
     emotion_scale: int = 4,
-    mute_cut_remain_ms: int = 400,
-    mute_cut_threshold: int = 100,
+    mute_cut_remain_ms: int = 100,
+    mute_cut_threshold: int = 400,
 ) -> Optional[str]:
     """Call _ensure_opening_narration with graceful fallback for legacy mocks."""
     func = _ensure_opening_narration
@@ -778,8 +778,8 @@ def run_step_4(
     bit_rate: int = 128000,
     emotion: str = "neutral",
     emotion_scale: int = 4,
-    mute_cut_remain_ms: int = 400,
-    mute_cut_threshold: int = 100,
+    mute_cut_remain_ms: int = 100,
+    mute_cut_threshold: int = 400,
 ) -> Dict[str, Any]:
     # 使用 ProjectPaths 管理路径
     paths = ProjectPaths(project_output_dir)
@@ -885,8 +885,8 @@ def run_step_5(
     bit_rate: int = 128000,
     emotion: str = "neutral",
     emotion_scale: int = 4,
-    mute_cut_remain_ms: int = 400,
-    mute_cut_threshold: int = 100,
+    mute_cut_remain_ms: int = 100,
+    mute_cut_threshold: int = 400,
 ) -> Dict[str, Any]:
     project_root = os.path.dirname(os.path.dirname(__file__))
     

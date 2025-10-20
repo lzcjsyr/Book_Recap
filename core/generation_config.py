@@ -41,9 +41,9 @@ class VideoGenerationConfig:
     bit_rate: int = 128000
     emotion: str = "neutral"
     emotion_scale: int = 4
-    mute_cut_remain_ms: int = 400
-    mute_cut_threshold: int = 100
-    
+    mute_cut_remain_ms: int = 100
+    mute_cut_threshold: int = 400
+
     # ==================== 视频合成配置 ====================
     video_size: Optional[str] = None  # None 则使用 image_size
     enable_subtitles: bool = True
@@ -127,8 +127,8 @@ class StepExecutionConfig:
     bit_rate: int = 128000
     emotion: str = "neutral"
     emotion_scale: int = 4
-    mute_cut_remain_ms: int = 400
-    mute_cut_threshold: int = 100
+    mute_cut_remain_ms: int = 100
+    mute_cut_threshold: int = 400
     enable_subtitles: bool = True
     bgm_filename: Optional[str] = None
     opening_quote: bool = True

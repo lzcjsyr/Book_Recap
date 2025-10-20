@@ -905,6 +905,8 @@ def run_cli_main(
             bit_rate=bit_rate,
             emotion=emotion,
             emotion_scale=emotion_scale,
+            mute_cut_remain_ms=mute_cut_remain_ms,
+            mute_cut_threshold=mute_cut_threshold,
         )
         
         result = run_auto(gen_config)

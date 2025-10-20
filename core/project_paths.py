@@ -76,15 +76,15 @@ class ProjectPaths:
     
     def opening_audio(self) -> str:
         """开场音频路径"""
-        return os.path.join(self.voice, "opening.wav")
+        return os.path.join(self.voice, "opening.mp3")
     
-    def segment_audio(self, index: int, extension: str = "wav") -> str:
+    def segment_audio(self, index: int, extension: str = "mp3") -> str:
         """
         段落音频路径
-        
+
         Args:
             index: 段落索引（从1开始）
-            extension: 文件扩展名（wav 或 mp3）
+            extension: 文件扩展名（mp3 或 wav）
         """
         return os.path.join(self.voice, f"voice_{index}.{extension}")
     

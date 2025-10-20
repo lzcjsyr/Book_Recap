@@ -537,10 +537,10 @@ def _synthesize_single_voice(args) -> Dict[str, Any]:
     (segment_index, content, server, voice, output_dir,
      speech_rate, loudness_rate, bit_rate, emotion, emotion_scale,
      mute_cut_remain_ms, mute_cut_threshold) = args
-    
+
     print(f"正在生成第{segment_index}段语音...")
-    
-    audio_filename = f"voice_{segment_index}.wav"
+
+    audio_filename = f"voice_{segment_index}.mp3"
     audio_path = os.path.join(output_dir, audio_filename)
     
     try:
@@ -581,8 +581,8 @@ def synthesize_voice_for_segments(
     bit_rate: int = 128000,
     emotion: str = "neutral",
     emotion_scale: int = 4,
-    mute_cut_remain_ms: int = 400,
-    mute_cut_threshold: int = 100,
+    mute_cut_remain_ms: int = 100,
+    mute_cut_threshold: int = 400,
 ) -> List[str]:
     """
     为每个段落合成语音（支持多线程并发）

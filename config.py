@@ -51,13 +51,13 @@ VOICE = "S_MfnRsKLH1"                                  # 语音音色
 RESOURCE_ID = "seed-icl-2.0"                           # TTS资源ID: seed-tts-1.0, seed-tts-2.0, seed-icl-1.0, seed-icl-2.0
 
 # 音频参数配置
-TTS_BIT_RATE = 128000                                  # 音频比特率 (64000-140000, 默认128000)
+TTS_BIT_RATE = 140000                                  # 音频比特率 (64000-160000, API限制最高160k, 建议使用最高值以获得最佳源音质)
 TTS_EMOTION = "neutral"                                # 情感: neutral(中性), happy(高兴), sad(悲伤)等
 TTS_EMOTION_SCALE = 4                                  # 情感强度 (1-5, 默认4)
 TTS_SPEECH_RATE = 10                                   # 语速 (-50到100, 0=正常, 100=2倍速, -50=0.5倍速, 默认0)
 TTS_LOUDNESS_RATE = 0                                  # 音量 (-50到100, 0=正常, 100=2倍音量, -50=0.5倍音量, 默认0)
-TTS_MUTE_CUT_REMAIN_MS = 400                           # 静音切除后保留时长 (毫秒, 默认400)
-TTS_MUTE_CUT_THRESHOLD = 100                           # 静音切除阈值 (默认100)
+TTS_MUTE_CUT_REMAIN_MS = 100                         # 静音切除后保留时长 (毫秒, 默认100)
+TTS_MUTE_CUT_THRESHOLD = 400                         # 音量小于该值时判定为静音 (默认400)
 
 MAX_CONCURRENT_VOICE_SYNTHESIS = 5                     # 语音合成最大并发数
 
