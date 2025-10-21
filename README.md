@@ -9,15 +9,30 @@
 ### 系统要求
 
 - **Python 3.13+**（推荐）
+- **FFmpeg**（视频处理必需）
 - 支持 macOS、Windows、Linux
 
 ### 第一步：安装配置
 
 ```bash
-# 1. 安装依赖
+# 1. 安装 FFmpeg（视频合成必需的系统工具）
+# macOS
+brew install ffmpeg
+
+# Windows (使用 Chocolatey)
+choco install ffmpeg
+# 或从 https://ffmpeg.org/download.html 下载
+
+# Linux (Ubuntu/Debian)
+sudo apt install ffmpeg
+
+# 验证安装
+ffmpeg -version
+
+# 2. 安装 Python 依赖
 pip install -r requirements.txt
 
-# 2. 配置API密钥（复制并编辑 .env 文件）
+# 3. 配置API密钥（复制并编辑 .env 文件）
 cp .env.example .env
 # 编辑 .env 文件，填入你的API密钥
 
@@ -219,7 +234,7 @@ SILICONFLOW_KEY=your_key         # 备选方案
 SEEDREAM_API_KEY=your_key        # 豆包图像生成
 
 # 语音合成（必需）
-BYTEDANCE_TTS_APPID=your_appid   # 字节跳动TTS
+BYTEDANCE_TTS_APPID=your_appid   # 豆包语音
 BYTEDANCE_TTS_ACCESS_TOKEN=your_token
 ```
 
@@ -280,10 +295,17 @@ A: 主要取决于图片数量，制作一个5分钟视频的总成本约7元人
 
 ## 🔧 故障排除
 
-1. **检查依赖与路径**：确认已安装依赖，项目根目录存在 `config.py`、`core/`、`cli/`。
-2. **日志查看**：`cli/cli.log` 或控制台输出
-3. **网络问题**：确保API服务可访问
-4. **依赖问题**：重新运行 `pip install -r requirements.txt`
+1. **FFmpeg 未安装**：
+   - 错误信息：`未找到FFmpeg，无法执行口播变速`
+   - 解决方案：按照上述说明安装 FFmpeg 并验证 `ffmpeg -version` 可用
+
+2. **检查依赖与路径**：确认已安装依赖，项目根目录存在 `config.py`、`core/`、`cli/`。
+
+3. **日志查看**：`cli/cli.log` 或控制台输出
+
+4. **网络问题**：确保API服务可访问
+
+5. **依赖问题**：重新运行 `pip install -r requirements.txt`
 
 ---
 

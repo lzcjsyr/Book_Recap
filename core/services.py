@@ -181,7 +181,7 @@ def text_to_audio_bytedance(
     """
     # ============ 1. 验证配置 ============
     if not config.BYTEDANCE_TTS_APPID or not config.BYTEDANCE_TTS_ACCESS_TOKEN:
-        raise APIError("字节语音合成配置不完整，请检查BYTEDANCE_TTS_APPID和BYTEDANCE_TTS_ACCESS_TOKEN")
+        raise APIError("豆包语音配置不完整，请检查BYTEDANCE_TTS_APPID和BYTEDANCE_TTS_ACCESS_TOKEN")
     
     APPID = config.BYTEDANCE_TTS_APPID
     ACCESS_TOKEN = config.BYTEDANCE_TTS_ACCESS_TOKEN

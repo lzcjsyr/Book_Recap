@@ -44,9 +44,9 @@ def check_api_keys() -> List[str]:
     
     # 检查TTS服务密钥
     if not config.BYTEDANCE_TTS_APPID or not config.BYTEDANCE_TTS_ACCESS_TOKEN:
-        issues.append("❌ 错误: 字节跳动TTS配置不完整（语音合成必需）")
+        issues.append("❌ 错误: 豆包语音配置不完整（语音合成必需）")
     else:
-        print("✅ 字节跳动TTS配置: 已配置")
+        print("✅ 豆包语音配置: 已配置")
     
     return issues
 
