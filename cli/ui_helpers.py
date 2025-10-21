@@ -124,35 +124,45 @@ def display_project_progress_and_select_step(progress) -> Optional[float]:
     Returns:
         Optional[float]: 选择的步骤编号，None表示退出
     """
-    # 步骤定义
+    # 步骤定义 - 使用实际状态而不是简单的完成标记
     has_keywords = progress.get('has_keywords', False)
     has_description = progress.get('has_description', False)
     step2_done = has_keywords or has_description
 
+    # 定义每个步骤的三种状态: "completed" / "in_progress" / "not_started"
     steps = [
-        (1, "内容生成", progress.get('has_raw', False)),
-        (1.5, "脚本分段", progress.get('has_script', False)),
-        (2, "要点提取", step2_done),
-        (3, "图像生成", progress.get('images_ok', False)),
-        (4, "语音合成", progress.get('audio_ok', False)),
-        (5, "视频合成", progress.get('has_final_video', False)),
-        (6, "封面生成", progress.get('has_cover', False))
+        (1, "内容生成",
+         "completed" if progress.get('has_raw', False) else "not_started"),
+        (1.5, "脚本分段",
+         "completed" if progress.get('has_script', False) else "not_started"),
+        (2, "要点提取",
+         "completed" if step2_done else "not_started"),
+        (3, "图像生成",
+         "completed" if progress.get('images_ok', False) else
+         ("in_progress" if progress.get('images_in_progress', False) else "not_started")),
+        (4, "语音合成",
+         "completed" if progress.get('audio_ok', False) else
+         ("in_progress" if progress.get('audio_in_progress', False) else "not_started")),
+        (5, "视频合成",
+         "completed" if progress.get('has_final_video', False) else "not_started"),
+        (6, "封面生成",
+         "completed" if progress.get('has_cover', False) else "not_started")
     ]
-    
+
     current_step = progress.get('current_step', 0)
-    
+
     print(f"\n📊 项目进度状态")
     print("=" * 60)
-    
-    # 显示步骤状态
-    for step_num, step_name, is_completed in steps:
-        if is_completed:
+
+    # 显示步骤状态 - 基于实际状态而非简单的数字比较
+    for step_num, step_name, step_status in steps:
+        if step_status == "completed":
             status = "✅ 已完成"
-        elif step_num <= current_step:
+        elif step_status == "in_progress":
             status = "⏳ 进行中"
         else:
             status = "⭕ 未开始"
-            
+
         print(f"步骤 {step_num:>3}: {step_name:<10} {status}")
     
     print("=" * 60)
@@ -430,12 +440,14 @@ def _prompt_segment_generation_scope(
 
     if allow_opening:
         print(
-            f"输入 0 可重新生成{opening_label}；输入 1-{total_segments} 选择段落，可用空格或逗号分隔多个数字。输入 q 返回上一级。"
+            f"输入 0 可重新生成{opening_label}；输入 1-{total_segments} 选择段落，可用空格或逗号分隔多个数字。"
         )
+        print(f"💡 提示：可只生成开场金句或部分段落，未生成的段落允许缺失（视频合成前需补全）。输入 q 返回上一级。")
     else:
         print(
-            f"输入 1-{total_segments} 选择段落，可用空格或逗号分隔多个数字。输入 q 返回上一级。"
+            f"输入 1-{total_segments} 选择段落，可用空格或逗号分隔多个数字。"
         )
+        print(f"💡 提示：可只生成部分段落，未生成的段落允许缺失（视频合成前需补全）。输入 q 返回上一级。")
 
     while True:
         try:
