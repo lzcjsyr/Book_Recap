@@ -661,9 +661,10 @@ def _run_step_by_step_loop(
         else:
             if result.get("cancelled"):
                 print("👋 已取消当前步骤")
+                # 用户取消：不退出，继续进入交互循环让用户重新选择
             else:
                 print(f"❌ 步骤 {initial_step} 执行失败: {result.get('message', '未知错误')}")
-            return result
+                return result  # 只有真正失败时才返回
     
     # 进入交互循环
     while True:
