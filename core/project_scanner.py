@@ -163,6 +163,7 @@ def detect_project_progress(project_dir: str) -> Dict[str, Any]:
     audio_started = False
     images_in_progress = False
     audio_in_progress = False
+    has_opening_audio = False
     if has_script:
         try:
             num_segments = len(script.get('segments', []))
@@ -185,8 +186,12 @@ def detect_project_progress(project_dir: str) -> Dict[str, Any]:
                 m = re.match(r'^voice_(\d+)\.(wav|mp3)$', f)
                 if m:
                     audio_indices.append(int(m.group(1)))
+
+            # 检测开场音频（opening.mp3）
+            has_opening_audio = os.path.exists(os.path.join(paths.voice, 'opening.mp3'))
+
             audio_ok = (len(audio_indices) == num_segments) and (set(audio_indices) == set(range(1, num_segments+1)))
-            audio_started = len(audio_indices) > 0
+            audio_started = len(audio_indices) > 0 or has_opening_audio  # 有正常段落音频或有开场音频即为已开始
             audio_in_progress = audio_started and not audio_ok
         except Exception:
             images_ok = False
@@ -195,6 +200,7 @@ def detect_project_progress(project_dir: str) -> Dict[str, Any]:
             audio_started = False
             images_in_progress = False
             audio_in_progress = False
+            has_opening_audio = False
 
     has_final_video = os.path.exists(paths.final_video()) and os.path.getsize(paths.final_video()) > 0
 
@@ -261,6 +267,7 @@ def detect_project_progress(project_dir: str) -> Dict[str, Any]:
         'audio_started': audio_started,
         'images_in_progress': images_in_progress,
         'audio_in_progress': audio_in_progress,
+        'has_opening_audio': has_opening_audio,
         'has_final_video': has_final_video,
         'has_cover': len(cover_images) > 0,
         'current_step': current_step,
