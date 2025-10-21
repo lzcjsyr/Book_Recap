@@ -540,7 +540,7 @@ def _synthesize_single_voice(args) -> Dict[str, Any]:
 
     print(f"正在生成第{segment_index}段语音...")
 
-    audio_filename = f"voice_{segment_index}.mp3"
+    audio_filename = f"voice_{segment_index}.wav"
     audio_path = os.path.join(output_dir, audio_filename)
     
     try:

@@ -6,11 +6,35 @@ import os
 import random
 import json
 import base64
+import struct
 import requests
 from openai import OpenAI
 
 from config import config
 from core.utils import logger, APIError, retry_on_failure
+
+
+def _create_wav_header(pcm_data_size, sample_rate=48000, channels=1, bits_per_sample=16):
+    """创建 WAV 文件头（44 字节）"""
+    byte_rate = sample_rate * channels * bits_per_sample // 8
+    block_align = channels * bits_per_sample // 8
+
+    return struct.pack(
+        '<4sI4s4sIHHIIHH4sI',
+        b'RIFF',
+        36 + pcm_data_size,
+        b'WAVE',
+        b'fmt ',
+        16,
+        1,
+        channels,
+        sample_rate,
+        byte_rate,
+        block_align,
+        bits_per_sample,
+        b'data',
+        pcm_data_size
+    )
 
 
 @retry_on_failure(max_retries=2, delay=2.0)
@@ -165,9 +189,9 @@ def text_to_audio_bytedance(
 
     Args:
         text: 要合成的文本
-        output_filename: 输出文件路径（.mp3格式）
+        output_filename: 输出文件路径（.wav格式）
         voice: 音色ID
-        encoding: 输出编码格式（保留参数，实际输出为mp3）
+        encoding: 输出编码格式（保留参数，实际输出为wav）
         speech_rate: 语速 (-50到100, 0=正常, 100=2倍速, -50=0.5倍速)
         loudness_rate: 音量 (-50到100, 0=正常, 100=2倍音量, -50=0.5倍音量)
         bit_rate: 音频比特率 (64000-140000)
@@ -212,8 +236,8 @@ def text_to_audio_bytedance(
     
     # 构建 audio_params（音频参数）
     audio_params = {
-        "format": "mp3",
-        "sample_rate": 24000,
+        "format": "pcm",
+        "sample_rate": 48000,
         "bit_rate": bit_rate,
         "emotion": emotion,
         "emotion_scale": emotion_scale,
@@ -291,11 +315,13 @@ def text_to_audio_bytedance(
         from core.utils import ensure_directory_exists
         ensure_directory_exists(os.path.dirname(output_filename))
 
-        # 直接保存为 MP3 文件
+        # 添加 WAV header 并保存为 WAV 文件
+        wav_header = _create_wav_header(len(audio_data), sample_rate=48000)
         with open(output_filename, "wb") as f:
+            f.write(wav_header)
             f.write(audio_data)
 
-        logger.info(f"语音合成成功 - 文件大小: {len(audio_data)/1024:.1f} KB, 已保存为 MP3: {output_filename}")
+        logger.info(f"语音合成成功 - 文件大小: {(len(audio_data) + 44)/1024:.1f} KB, 已保存为 WAV: {output_filename}")
 
         return True
         

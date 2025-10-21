@@ -14,6 +14,7 @@ from pathlib import Path
 
 from core.utils import logger, get_file_info, FileProcessingError
 from core.project_paths import ProjectPaths
+from config import OPENING_QUOTE
 
 
 def scan_input_files(input_dir: str = "input") -> List[Dict[str, Any]]:
@@ -180,10 +181,15 @@ def detect_project_progress(project_dir: str) -> Dict[str, Any]:
             # 检测开场图像（opening.png）
             has_opening_image = os.path.exists(paths.opening_image())
 
-            images_ok = (len(image_indices) == num_segments) and (set(image_indices) == set(range(1, num_segments+1)))
-            images_started = len(image_indices) > 0 or has_opening_image  # 有正常段落图像或有开场图像即为已开始
+            # 步骤3：图像完成条件 - 根据 OPENING_QUOTE 配置调整
+            segment_images_complete = (len(image_indices) == num_segments) and (set(image_indices) == set(range(1, num_segments+1)))
+            if OPENING_QUOTE:
+                images_ok = segment_images_complete and has_opening_image
+            else:
+                images_ok = segment_images_complete
+            images_started = len(image_indices) > 0 or (OPENING_QUOTE and has_opening_image)
             images_in_progress = images_started and not images_ok
-            
+
             # 音频检查 - 使用 ProjectPaths
             audio_files = [f for f in os.listdir(paths.voice) if os.path.isfile(os.path.join(paths.voice, f))] if os.path.isdir(paths.voice) else []
             audio_indices = []
@@ -195,8 +201,13 @@ def detect_project_progress(project_dir: str) -> Dict[str, Any]:
             # 检测开场音频（opening.mp3）
             has_opening_audio = os.path.exists(os.path.join(paths.voice, 'opening.mp3'))
 
-            audio_ok = (len(audio_indices) == num_segments) and (set(audio_indices) == set(range(1, num_segments+1)))
-            audio_started = len(audio_indices) > 0 or has_opening_audio  # 有正常段落音频或有开场音频即为已开始
+            # 步骤4：音频完成条件 - 根据 OPENING_QUOTE 配置调整
+            segment_audio_complete = (len(audio_indices) == num_segments) and (set(audio_indices) == set(range(1, num_segments+1)))
+            if OPENING_QUOTE:
+                audio_ok = segment_audio_complete and has_opening_audio
+            else:
+                audio_ok = segment_audio_complete
+            audio_started = len(audio_indices) > 0 or (OPENING_QUOTE and has_opening_audio)
             audio_in_progress = audio_started and not audio_ok
         except Exception:
             images_ok = False
