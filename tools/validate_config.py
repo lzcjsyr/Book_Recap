@@ -79,8 +79,8 @@ def check_directories() -> List[str]:
 def check_config_params() -> List[str]:
     """检查配置参数有效性"""
     issues = []
-    from config import (TARGET_LENGTH, NUM_SEGMENTS, IMAGE_SIZE, IMAGE_MODEL, 
-                       SPEED_RATIO, LOUDNESS_RATIO)
+    from config import (TARGET_LENGTH, NUM_SEGMENTS, IMAGE_SIZE, IMAGE_MODEL,
+                       TTS_SPEECH_RATE, TTS_LOUDNESS_RATE, TTS_EMOTION, TTS_EMOTION_SCALE)
     
     print("\n⚙️  检查配置参数:")
     
@@ -123,17 +123,22 @@ def check_config_params() -> List[str]:
     except Exception as e:
         issues.append(f"❌ 图像尺寸格式错误: {IMAGE_SIZE}")
     
-    # 检查语速和音量
-    if not (0.8 <= SPEED_RATIO <= 2.0):
-        issues.append(f"⚠️  语速系数 {SPEED_RATIO} 超出推荐范围 [0.8, 2.0]")
+    # 检查TTS参数
+    if not (-50 <= TTS_SPEECH_RATE <= 100):
+        issues.append(f"⚠️  TTS语速 {TTS_SPEECH_RATE} 超出范围 [-50, 100]")
     else:
-        print(f"✅ 语速系数: {SPEED_RATIO}")
-    
-    if not (0.5 <= LOUDNESS_RATIO <= 2.0):
-        issues.append(f"⚠️  音量系数 {LOUDNESS_RATIO} 超出推荐范围 [0.5, 2.0]")
+        print(f"✅ TTS语速: {TTS_SPEECH_RATE}")
+
+    if not (-50 <= TTS_LOUDNESS_RATE <= 100):
+        issues.append(f"⚠️  TTS音量 {TTS_LOUDNESS_RATE} 超出范围 [-50, 100]")
     else:
-        print(f"✅ 音量系数: {LOUDNESS_RATIO}")
-    
+        print(f"✅ TTS音量: {TTS_LOUDNESS_RATE}")
+
+    if not (1 <= TTS_EMOTION_SCALE <= 5):
+        issues.append(f"⚠️  TTS情感强度 {TTS_EMOTION_SCALE} 超出范围 [1, 5]")
+    else:
+        print(f"✅ TTS情感: {TTS_EMOTION}({TTS_EMOTION_SCALE})")
+
     return issues
 
 

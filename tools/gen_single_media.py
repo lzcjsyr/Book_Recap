@@ -170,8 +170,13 @@ def generate_audio(
     save_dir: str,
     voice: str = "zh_male_yuanboxiaoshu_moon_bigtts",
     encoding: str = "wav",
-    speed_ratio: float = 1.0,
-    loudness_ratio: float = 1.0,
+    speech_rate: int = 0,
+    loudness_rate: int = 0,
+    emotion: str = "neutral",
+    emotion_scale: int = 4,
+    mute_cut_threshold: int = 400,
+    mute_cut_min_silence_ms: int = 200,
+    mute_cut_remain_ms: int = 100,
 ) -> str:
     os.makedirs(save_dir, exist_ok=True)
 
@@ -188,8 +193,13 @@ def generate_audio(
         output_filename=output_path,
         voice=voice,
         encoding=enc_norm,
-        speed_ratio=speed_ratio,
-        loudness_ratio=loudness_ratio,
+        speech_rate=speech_rate,
+        loudness_rate=loudness_rate,
+        emotion=emotion,
+        emotion_scale=emotion_scale,
+        mute_cut_threshold=mute_cut_threshold,
+        mute_cut_min_silence_ms=mute_cut_min_silence_ms,
+        mute_cut_remain_ms=mute_cut_remain_ms,
     )
     if not ok or not os.path.exists(output_path):
         raise RuntimeError("语音合成失败")
