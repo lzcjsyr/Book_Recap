@@ -112,6 +112,86 @@ def get_text_input() -> str:
                     raise RuntimeError("用户取消文档读取")
 
 
+def get_multiline_prompt(prompt_text: str = "请输入图片提示词") -> str:
+    """
+    支持多行输入的提示词获取函数
+
+    用户可以通过以下方式结束输入：
+    1. 输入空行
+    2. 输入 END
+    3. 按 Ctrl+D (macOS/Linux) 或 Ctrl+Z (Windows)
+
+    Args:
+        prompt_text: 提示文本
+
+    Returns:
+        str: 完整的多行文本
+    """
+    print(f"\n{'='*60}")
+    print(f"📝 {prompt_text}")
+    print(f"{'='*60}")
+    print("💡 提示：")
+    print("  • 支持多行输入，每输入一行按回车继续")
+    print("  • 输入完成后，输入空行或 'END' 结束")
+    print("  • 或按 Ctrl+D (macOS/Linux) / Ctrl+Z (Windows) 结束")
+    print("  • 输入 'CANCEL' 取消操作")
+    print(f"{'='*60}\n")
+
+    lines = []
+    line_number = 1
+
+    try:
+        while True:
+            try:
+                line = input(f"[第{line_number}行] ")
+
+                # 检查取消命令
+                if line.strip().upper() == "CANCEL":
+                    print("\n❌ 已取消输入")
+                    raise KeyboardInterrupt
+
+                # 检查结束命令
+                if line.strip().upper() == "END":
+                    break
+
+                # 空行结束
+                if not line.strip() and lines:  # 至少输入了一行内容后，空行才结束
+                    break
+
+                # 如果是第一行且为空，提示重新输入
+                if not line.strip() and not lines:
+                    print("⚠️  第一行不能为空，请输入内容")
+                    continue
+
+                lines.append(line)
+                line_number += 1
+
+            except EOFError:  # Ctrl+D / Ctrl+Z
+                break
+
+    except KeyboardInterrupt:
+        raise RuntimeError("用户取消输入")
+
+    result = "\n".join(lines).strip()
+
+    if not result:
+        raise ValueError("提示词不能为空")
+
+    # 显示输入的内容预览
+    print(f"\n{'='*60}")
+    print(f"✅ 已输入 {len(lines)} 行，共 {len(result)} 字符")
+    print(f"{'='*60}")
+    print("内容预览：")
+    preview_lines = result.split('\n')[:5]  # 显示前5行
+    for i, line in enumerate(preview_lines, 1):
+        print(f"  {i}. {line[:80]}{'...' if len(line) > 80 else ''}")
+    if len(result.split('\n')) > 5:
+        print(f"  ... (还有 {len(result.split('\n')) - 5} 行)")
+    print(f"{'='*60}\n")
+
+    return result
+
+
 def generate_image(prompt: str, save_dir: str, size: str = "1024x1024", model: str = "doubao-seedream-3-0-t2i-250415") -> str:
     os.makedirs(save_dir, exist_ok=True)
 
@@ -238,9 +318,10 @@ def main(
     try:
         if choice == "1":
             # 生成图片
-            prompt = input("\n请输入提示词：").strip()
-            if not prompt:
-                print("提示词不能为空。")
+            try:
+                prompt = get_multiline_prompt("请输入图片提示词")
+            except (ValueError, RuntimeError) as e:
+                print(f"❌ {e}")
                 return 1
             print("\n正在生成图片…")
             out_path = generate_image(prompt, temp_dir, size=image_size, model=image_model)
