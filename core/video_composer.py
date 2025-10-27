@@ -11,6 +11,7 @@ import tempfile
 from contextlib import suppress
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
+from PIL import Image, ImageDraw, ImageFont
 
 # MoviePy 2.x imports (no editor module)
 from moviepy import (
@@ -267,6 +268,76 @@ class VideoComposer:
 
         return ",".join(filter_parts)
 
+    def _create_text_image_pil(self, text: str, font_size: int, font_path: str,
+                               text_color: str, stroke_color: str, stroke_width: int) -> Image.Image:
+        """
+        使用 PIL 渲染文字到图片，完整保留 descender（下伸笔画）
+
+        这个方法解决了 MoviePy TextClip 裁切行楷字体底部笔画的问题
+
+        Args:
+            text: 要渲染的文字
+            font_size: 字体大小
+            font_path: 字体文件路径
+            text_color: 文字颜色
+            stroke_color: 描边颜色
+            stroke_width: 描边宽度
+
+        Returns:
+            PIL.Image.Image: 带透明背景的文字图片
+        """
+        try:
+            # 加载字体
+            font = ImageFont.truetype(font_path, font_size)
+
+            # 使用临时图片测量文字边界框
+            temp_img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+            temp_draw = ImageDraw.Draw(temp_img)
+
+            # 获取文字边界框 (left, top, right, bottom)
+            # textbbox 会包含完整的 descender
+            bbox = temp_draw.textbbox((0, 0), text, font=font, anchor='lt', stroke_width=stroke_width)
+
+            # 计算实际画布大小（包含描边空间）
+            width = bbox[2] - bbox[0] + stroke_width * 2
+            height = bbox[3] - bbox[1] + stroke_width * 2
+
+            # 创建带透明背景的图片
+            img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(img)
+
+            # 计算绘制位置（考虑 bbox 的偏移）
+            draw_x = -bbox[0] + stroke_width
+            draw_y = -bbox[1] + stroke_width
+
+            # 转换颜色
+            if text_color == 'white':
+                fill = (255, 255, 255, 255)
+            else:
+                fill = text_color
+
+            if stroke_color == 'black':
+                stroke = (0, 0, 0, 255)
+            else:
+                stroke = stroke_color
+
+            # 绘制文字
+            draw.text(
+                (draw_x, draw_y),
+                text,
+                font=font,
+                fill=fill,
+                stroke_width=stroke_width,
+                stroke_fill=stroke,
+                anchor='lt'
+            )
+
+            return img
+
+        except Exception as e:
+            logger.warning(f"PIL 文字渲染失败: {e}，将返回空图片")
+            return Image.new('RGBA', (1, 1), (0, 0, 0, 0))
+
     def _add_opening_quote(self, opening_base, opening_golden_quote: str, opening_seconds: float):
         """添加开场金句文字叠加"""
         preferred_font_path = config.OPENING_QUOTE_FONT_FAMILY or config.SUBTITLE_FONT_FAMILY
@@ -287,30 +358,57 @@ class VideoComposer:
             lines = candidate_lines[:max_q_lines] if candidate_lines else [opening_golden_quote]
         except Exception:
             lines = [opening_golden_quote]
-        
-        # 创建多行文字剪辑实现行间距控制
+
+        # 使用 PIL 渲染文字，完整保留 descender
         line_spacing = int(config.OPENING_QUOTE_LINE_SPACING)
-        text_clips = []
-        
-        # 计算总高度以实现居中（绝对像素基准）
-        total_height = len(lines) * font_size + (len(lines) - 1) * line_spacing
         video_height = opening_base.h
-        top_y = max(0, (int(video_height) - int(total_height)) // 2)
-        
-        for i, line in enumerate(lines):
-            if line.strip():
-                y_abs = int(top_y + i * (font_size + line_spacing))
-                line_clip = TextClip(
-                    text=line,
-                    font_size=font_size,
-                    color=text_color,
-                    font=resolved_font or preferred_font_path,
-                    stroke_color=stroke_color,
-                    stroke_width=stroke_width
-                ).with_start(0).with_duration(opening_seconds).with_position(("center", y_abs))
-                text_clips.append(line_clip)
-        
-        return CompositeVideoClip([opening_base] + text_clips)
+        temp_image_paths = []  # 临时图片路径列表
+        text_clips = []
+
+        try:
+            # 步骤1: 使用 PIL 渲染每行文字到临时图片
+            line_heights = []
+            for i, line in enumerate(lines):
+                if line.strip():
+                    # 用 PIL 渲染文字
+                    text_img = self._create_text_image_pil(
+                        text=line,
+                        font_size=font_size,
+                        font_path=resolved_font or preferred_font_path,
+                        text_color=text_color,
+                        stroke_color=stroke_color,
+                        stroke_width=stroke_width
+                    )
+
+                    # 保存到临时文件
+                    temp_path = tempfile.mktemp(suffix=f"_quote_line_{i}.png")
+                    text_img.save(temp_path)
+                    temp_image_paths.append(temp_path)
+                    line_heights.append(text_img.height)
+                else:
+                    line_heights.append(0)
+                    temp_image_paths.append(None)
+
+            # 步骤2: 计算总高度和顶部Y坐标
+            total_height = sum(line_heights) + (len(lines) - 1) * line_spacing
+            top_y = max(0, (int(video_height) - int(total_height)) // 2)
+
+            # 步骤3: 用 ImageClip 加载图片并定位
+            current_y = top_y
+            for i, temp_path in enumerate(temp_image_paths):
+                if temp_path:
+                    line_clip = ImageClip(temp_path).with_start(0).with_duration(opening_seconds).with_position(("center", current_y))
+                    text_clips.append(line_clip)
+                    current_y += line_heights[i] + line_spacing
+
+            return CompositeVideoClip([opening_base] + text_clips)
+
+        finally:
+            # 清理临时图片文件
+            for temp_path in temp_image_paths:
+                if temp_path and os.path.exists(temp_path):
+                    with suppress(Exception):
+                        os.remove(temp_path)
     
     def _add_opening_fade_effect(self, opening_clip, opening_voice_clip, opening_seconds: float):
         """为开场片段添加渐隐效果（仅限开场，时长较短，对性能影响可忽略）"""

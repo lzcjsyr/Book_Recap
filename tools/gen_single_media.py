@@ -116,10 +116,17 @@ def get_multiline_prompt(prompt_text: str = "请输入图片提示词") -> str:
     """
     支持多行输入的提示词获取函数
 
-    用户可以通过以下方式结束输入：
-    1. 输入空行
-    2. 输入 END
-    3. 按 Ctrl+D (macOS/Linux) 或 Ctrl+Z (Windows)
+    用户可以选择逐行输入或粘贴模式
+
+    逐行输入模式：
+    1. 输入空行结束
+    2. 输入 END 结束
+    3. 按 Ctrl+D (macOS/Linux) 或 Ctrl+Z (Windows) 结束
+
+    粘贴模式：
+    1. 直接粘贴多行文本
+    2. 输入 END（单独一行）结束
+    3. 按 Ctrl+D (macOS/Linux) 或 Ctrl+Z (Windows) 结束
 
     Args:
         prompt_text: 提示文本
@@ -130,12 +137,32 @@ def get_multiline_prompt(prompt_text: str = "请输入图片提示词") -> str:
     print(f"\n{'='*60}")
     print(f"📝 {prompt_text}")
     print(f"{'='*60}")
-    print("💡 提示：")
-    print("  • 支持多行输入，每输入一行按回车继续")
-    print("  • 输入完成后，输入空行或 'END' 结束")
-    print("  • 或按 Ctrl+D (macOS/Linux) / Ctrl+Z (Windows) 结束")
-    print("  • 输入 'CANCEL' 取消操作")
+    print("请选择输入模式：")
+    print("  1) 逐行输入模式（每输入一行按回车，空行结束）")
+    print("  2) 粘贴模式（粘贴多行文本，输入END或Ctrl+D结束）")
     print(f"{'='*60}\n")
+
+    while True:
+        mode = input("请选择模式 (1/2): ").strip()
+        if mode in ("1", "2"):
+            break
+        print("无效输入，请输入 1 或 2")
+
+    print()
+
+    if mode == "1":
+        return _get_input_line_by_line()
+    else:
+        return _get_input_paste_mode(prompt_text)
+
+
+def _get_input_line_by_line() -> str:
+    """逐行输入模式"""
+    print("💡 逐行输入模式：")
+    print("  • 每输入一行按回车继续")
+    print("  • 输入空行或 'END' 结束")
+    print("  • 输入 'CANCEL' 取消操作")
+    print()
 
     lines = []
     line_number = 1
@@ -155,7 +182,7 @@ def get_multiline_prompt(prompt_text: str = "请输入图片提示词") -> str:
                     break
 
                 # 空行结束
-                if not line.strip() and lines:  # 至少输入了一行内容后，空行才结束
+                if not line.strip() and lines:
                     break
 
                 # 如果是第一行且为空，提示重新输入
@@ -166,7 +193,7 @@ def get_multiline_prompt(prompt_text: str = "请输入图片提示词") -> str:
                 lines.append(line)
                 line_number += 1
 
-            except EOFError:  # Ctrl+D / Ctrl+Z
+            except EOFError:
                 break
 
     except KeyboardInterrupt:
@@ -177,19 +204,65 @@ def get_multiline_prompt(prompt_text: str = "请输入图片提示词") -> str:
     if not result:
         raise ValueError("提示词不能为空")
 
-    # 显示输入的内容预览
+    _show_input_preview(result, len(lines))
+    return result
+
+
+def _get_input_paste_mode(prompt_text: str) -> str:
+    """粘贴模式：一次性粘贴多行文本"""
+    print("💡 粘贴模式：")
+    print("  • 直接粘贴多行文本（可以包含任意多行）")
+    print("  • 粘贴完成后，在新的一行输入 'END' 结束")
+    print("  • 或按 Ctrl+D (macOS/Linux) / Ctrl+Z (Windows) 结束")
+    print("  • 输入 'CANCEL' 取消操作")
+    print()
+    print("请粘贴内容（结束后输入END）：")
+
+    lines = []
+
+    try:
+        while True:
+            try:
+                line = input()
+
+                # 检查结束命令
+                if line.strip().upper() == "END":
+                    break
+
+                # 检查取消命令
+                if line.strip().upper() == "CANCEL":
+                    print("\n❌ 已取消输入")
+                    raise KeyboardInterrupt
+
+                lines.append(line)
+
+            except EOFError:
+                break
+
+    except KeyboardInterrupt:
+        raise RuntimeError("用户取消输入")
+
+    result = "\n".join(lines).strip()
+
+    if not result:
+        raise ValueError("提示词不能为空")
+
+    _show_input_preview(result, len(lines))
+    return result
+
+
+def _show_input_preview(result: str, line_count: int):
+    """显示输入内容预览"""
     print(f"\n{'='*60}")
-    print(f"✅ 已输入 {len(lines)} 行，共 {len(result)} 字符")
+    print(f"✅ 已输入 {line_count} 行，共 {len(result)} 字符")
     print(f"{'='*60}")
     print("内容预览：")
-    preview_lines = result.split('\n')[:5]  # 显示前5行
+    preview_lines = result.split('\n')[:5]
     for i, line in enumerate(preview_lines, 1):
         print(f"  {i}. {line[:80]}{'...' if len(line) > 80 else ''}")
     if len(result.split('\n')) > 5:
         print(f"  ... (还有 {len(result.split('\n')) - 5} 行)")
     print(f"{'='*60}\n")
-
-    return result
 
 
 def generate_image(prompt: str, save_dir: str, size: str = "1024x1024", model: str = "doubao-seedream-3-0-t2i-250415") -> str:
