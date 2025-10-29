@@ -175,9 +175,32 @@ class VideoComposer:
 
         if opening_image_path and os.path.exists(opening_image_path) and opening_seconds > 1e-3:
             print("正在创建开场片段…")
-            opening_base = ImageClip(opening_image_path).with_duration(opening_seconds)
-            # 调整开场图片尺寸到目标尺寸
-            opening_base = self._resize_image(opening_base, target_size)
+
+            # 检测并处理视频或图片格式
+            if self._is_video_file(opening_image_path):
+                # 视频素材处理
+                print(f"  使用视频素材: {os.path.basename(opening_image_path)}")
+                opening_base = VideoFileClip(opening_image_path).without_audio()
+                opening_base = self._resize_video(opening_base, target_size)
+
+                # 调整时长到音频长度
+                original_duration = opening_base.duration
+                print(f"  开场视频时长: {original_duration:.2f}s，目标时长: {opening_seconds:.2f}s")
+
+                if original_duration < opening_seconds:
+                    print(f"  视频较短，拉伸到 {opening_seconds:.2f}s")
+                    opening_base = opening_base.with_duration(opening_seconds)
+                elif original_duration > opening_seconds:
+                    print(f"  视频较长，从头裁剪到 {opening_seconds:.2f}s")
+                    opening_base = opening_base.subclipped(0, opening_seconds)
+                else:
+                    print(f"  视频时长匹配，无需调整")
+            else:
+                # 图片素材处理（原有逻辑）
+                print(f"  使用图片素材: {os.path.basename(opening_image_path)}")
+                opening_base = ImageClip(opening_image_path).with_duration(opening_seconds)
+                # 调整开场图片尺寸到目标尺寸
+                opening_base = self._resize_image(opening_base, target_size)
             
             # 添加开场金句
             if opening_golden_quote and opening_golden_quote.strip():
@@ -340,6 +363,10 @@ class VideoComposer:
 
     def _add_opening_quote(self, opening_base, opening_golden_quote: str, opening_seconds: float):
         """添加开场金句文字叠加"""
+        # 检查是否显示文字
+        if not config.OPENING_QUOTE_SHOW_TEXT:
+            return opening_base  # 不显示文字，直接返回原始片段
+
         preferred_font_path = config.OPENING_QUOTE_FONT_FAMILY or config.SUBTITLE_FONT_FAMILY
         resolved_font = self.resolve_font_path(preferred_font_path)
         base_font = int(config.SUBTITLE_FONT_SIZE)

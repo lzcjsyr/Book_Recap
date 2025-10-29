@@ -51,7 +51,13 @@ class ProjectPaths:
     # ==================== Images 目录相关路径 ====================
     
     def opening_image(self) -> str:
-        """开场图片路径"""
+        """开场素材路径（自动检测图片或视频格式）"""
+        # 按优先级检查：视频格式优先，然后是图片格式
+        for ext in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.png', '.jpg']:
+            path = os.path.join(self.images, f"opening{ext}")
+            if os.path.exists(path):
+                return path
+        # 默认返回 PNG 路径（向后兼容）
         return os.path.join(self.images, "opening.png")
     
     def segment_image(self, index: int) -> str:
