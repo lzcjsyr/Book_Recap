@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # Redis服务（用于Celery消息队列）
+  redis:
+    image: redis:7-alpine
+    container_name: book_recap_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  # 后端API服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: book_recap_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./output:/app/output
+      - ./input:/app/input
+      - ./music:/app/music
+      - ./.env:/app/.env
+    environment:
+      - DATABASE_URL=sqlite:///./book_recap.db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+
+  # Celery Worker服务
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: book_recap_celery
+    volumes:
+      - ./output:/app/output
+      - ./input:/app/input
+      - ./music:/app/music
+      - ./.env:/app/.env
+    environment:
+      - DATABASE_URL=sqlite:///./book_recap.db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+    command: celery -A backend.celery_app worker --loglevel=info --concurrency=2
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: book_recap_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  redis_data:

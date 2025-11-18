@@ -65,3 +65,60 @@ build/
 # 音乐文件（通常较大，忽略具体文件但保留文件夹）
 music/*.mp3
 music/*.wav
+
+# ==================== Web版本相关 ====================
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+book_recap.db
+
+# PID files (开发模式启动脚本生成的进程ID文件)
+.backend.pid
+.celery.pid
+.frontend.pid
+
+# Backend logs
+backend.log
+celery.log
+
+# Node.js (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/frontend.log
+
+# Docker
+.docker/
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Python build
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Coverage
+.coverage
+htmlcov/

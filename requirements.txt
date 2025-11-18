@@ -27,3 +27,19 @@ tiktoken>=0.5.0
 
 # Testing
 pytest>=8.4.0
+
+# Web Backend (FastAPI)
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+websockets>=12.0
+pydantic>=2.5.0
+sqlalchemy>=2.0.25
+
+# Task Queue (Celery)
+celery>=5.3.4
+redis>=5.0.1
+
+# Additional utilities for web
+aiofiles>=23.2.1
+python-jose[cryptography]>=3.3.0
