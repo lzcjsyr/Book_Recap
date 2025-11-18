@@ -9,7 +9,7 @@ import os
 from contextlib import asynccontextmanager
 
 from backend.database import init_db
-from backend.api import projects, tasks, websocket
+from backend.api import projects, tasks, websocket, editor
 
 
 @asynccontextmanager
@@ -52,6 +52,7 @@ app.add_middleware(
 app.include_router(projects.router)
 app.include_router(tasks.router)
 app.include_router(websocket.router)
+app.include_router(editor.router)
 
 
 # 静态文件服务（用于提供生成的图片、音频、视频）
