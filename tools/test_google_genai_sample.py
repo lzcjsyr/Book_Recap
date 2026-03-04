@@ -43,23 +43,10 @@ def _generate_once(
     ]
 
     generate_content_config = types.GenerateContentConfig(
-        temperature=1,
-        top_p=0.95,
-        max_output_tokens=32768,
-        response_modalities=["TEXT", "IMAGE"],
-        safety_settings=[
-            types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
-            types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
-            types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
-            types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
-        ],
+        response_modalities=["IMAGE"],
         image_config=types.ImageConfig(
-            aspect_ratio="auto",
+            aspect_ratio="16:9",
             image_size="1K",
-            output_mime_type="image/png",
-        ),
-        thinking_config=types.ThinkingConfig(
-            thinking_level="HIGH",
         ),
     )
 

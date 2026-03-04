@@ -180,7 +180,10 @@ _GOOGLE_IMAGE_SIZE_TABLE_FLASH: Dict[str, Dict[str, Tuple[int, int]]] = {
 
 
 def _parse_wxh_size(size: str) -> Optional[Tuple[int, int]]:
-    size_text = str(size or "").lower().strip()
+    size_text = str(size or "").strip().lower()
+    for separator in ("×", "✕", "✖", "*"):
+        size_text = size_text.replace(separator, "x")
+    size_text = size_text.replace(" ", "")
     if "x" not in size_text:
         return None
     try:
@@ -197,13 +200,13 @@ def _map_custom_size_to_google(size: str, model: str) -> Tuple[str, str, Tuple[i
     """将 WxH 自定义尺寸映射到 Google image_config 所支持的 aspect_ratio + image_size。"""
     parsed = _parse_wxh_size(size)
     if not parsed:
-        return "auto", "1K", (1024, 1024)
+        return "1:1", "1K", (1024, 1024)
 
     width, height = parsed
     lower_model = str(model or "").lower()
     table = _GOOGLE_IMAGE_SIZE_TABLE_PRO if "pro-image-preview" in lower_model else _GOOGLE_IMAGE_SIZE_TABLE_FLASH
 
-    best_ratio = "auto"
+    best_ratio = "1:1"
     best_size = "1K"
     best_dims = (1024, 1024)
     best_score = float("inf")
@@ -229,6 +232,8 @@ def _map_custom_size_to_google(size: str, model: str) -> Tuple[str, str, Tuple[i
 @retry_on_failure(max_retries=5, delay=2.0)
 def text_to_image_google(prompt, size="1024x1024", model="gemini-3.1-flash-image-preview"):
     aspect_ratio, image_size, mapped_dims = _map_custom_size_to_google(size, model)
+    if not _parse_wxh_size(size):
+        logger.warning(f"Google图像尺寸格式无法解析: {size}，已回退到 {aspect_ratio}/{image_size}")
     logger.info(f"使用Google官方GenAI生成图像，模型: {model}，请求尺寸: {size} -> {aspect_ratio}/{image_size} ({mapped_dims[0]}x{mapped_dims[1]})")
     logger.info(f"Google图像提示词长度: {len(prompt)}字符")
 
@@ -260,26 +265,13 @@ def text_to_image_google(prompt, size="1024x1024", model="gemini-3.1-flash-image
                 parts=[types.Part.from_text(text=prompt)],
             )
         ]
+        # 保持最小可用参数集，避免可选字段在不同 API 模式下触发 INVALID_ARGUMENT。
         generate_content_config = types.GenerateContentConfig(
-            temperature=1,
-            top_p=0.95,
-            max_output_tokens=32768,
-            response_modalities=["TEXT", "IMAGE"],
-            safety_settings=[
-                types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
-                types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
-                types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
-                types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
-            ],
+            response_modalities=["IMAGE"],
             image_config=types.ImageConfig(
                 aspect_ratio=aspect_ratio,
                 image_size=image_size,
-                output_mime_type="image/png",
             ),
-            automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                disable=True,
-            ),
-            thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
         )
 
         response = client.models.generate_content(

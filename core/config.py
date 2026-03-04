@@ -7,7 +7,7 @@
 # ════════════════════════════════════════════════════════════════════════════════
 from pickle import TRUE
 
-OPENING_QUOTE = False                                 # 是否启用开场金句（影响步骤3、4、5）
+OPENING_QUOTE = True                                 # 是否启用开场金句（影响步骤3、4、5）
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 📝 步骤1：智能总结 - 文档压缩
@@ -409,7 +409,11 @@ def _get_required_keys_for_config_impl(cls, llm_server: str, image_server: str, 
 
 def _validate_image_size_impl(cls, size: str, model: str) -> bool:
     """验证图像尺寸是否符合模型要求"""
-    if not size or 'x' not in size:
+    if not size:
+        return False
+        
+    size = size.lower().replace('×', 'x').replace('*', 'x')
+    if 'x' not in size:
         return False
     
     try:
