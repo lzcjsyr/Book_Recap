@@ -3,13 +3,13 @@ Core services: unified entry points for model calls (migrated from genai_api).
 """
 
 from typing import Dict, Optional, Tuple
+import os
 import random
 import requests
 from openai import OpenAI
 
 from core.config import config
 from core.shared import logger, APIError, retry_on_failure
-
 
 @retry_on_failure(max_retries=2, delay=2.0)
 def text_to_text(server, model, prompt, system_message="", max_tokens=4000, temperature=0.5, output_format="text"):
@@ -228,9 +228,6 @@ def _map_custom_size_to_google(size: str, model: str) -> Tuple[str, str, Tuple[i
 
 @retry_on_failure(max_retries=2, delay=2.0)
 def text_to_image_google(prompt, size="1024x1024", model="gemini-3.1-flash-image-preview"):
-    if not config.GOOGLE_API_KEY:
-        raise APIError("GOOGLE_API_KEY 或 GOOGLE_CLOUD_API_KEY 未配置，无法使用Google图像生成服务")
-
     aspect_ratio, image_size, mapped_dims = _map_custom_size_to_google(size, model)
     logger.info(f"使用Google官方GenAI生成图像，模型: {model}，请求尺寸: {size} -> {aspect_ratio}/{image_size} ({mapped_dims[0]}x{mapped_dims[1]})")
     logger.info(f"Google图像提示词长度: {len(prompt)}字符")
@@ -242,11 +239,20 @@ def text_to_image_google(prompt, size="1024x1024", model="gemini-3.1-flash-image
         logger.error("未安装google-genai，请运行: pip install google-genai")
         raise APIError("缺少依赖包google-genai") from exc
 
+    client_kwargs: Dict[str, object] = {"vertexai": True}
+    project = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = os.getenv("GOOGLE_CLOUD_LOCATION")
+    if config.GOOGLE_CLOUD_API_KEY:
+        # google-genai SDK: api_key 与 project/location 互斥
+        client_kwargs["api_key"] = config.GOOGLE_CLOUD_API_KEY
+    else:
+        if project:
+            client_kwargs["project"] = project
+        if location:
+            client_kwargs["location"] = location
+
     try:
-        client = genai.Client(
-            vertexai=True,
-            api_key=config.GOOGLE_API_KEY,
-        )
+        client = genai.Client(**client_kwargs)
 
         contents = [
             types.Content(
@@ -270,29 +276,27 @@ def text_to_image_google(prompt, size="1024x1024", model="gemini-3.1-flash-image
                 image_size=image_size,
                 output_mime_type="image/png",
             ),
+            thinking_config=types.ThinkingConfig(thinking_level="HIGH"),
         )
 
-        for chunk in client.models.generate_content_stream(
+        response = client.models.generate_content(
             model=model,
             contents=contents,
             config=generate_content_config,
-        ):
-            candidates = getattr(chunk, "candidates", None) or []
-            for candidate in candidates:
-                content = getattr(candidate, "content", None)
-                parts = getattr(content, "parts", None) or []
-                for part in parts:
-                    inline_data = getattr(part, "inline_data", None)
-                    image_bytes = getattr(inline_data, "data", None) if inline_data else None
-                    if not image_bytes:
-                        continue
-                    if isinstance(image_bytes, memoryview):
-                        image_bytes = image_bytes.tobytes()
-                    if not isinstance(image_bytes, (bytes, bytearray)):
-                        continue
+        )
+        candidates = getattr(response, "candidates", None) or []
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            parts = getattr(content, "parts", None) or []
+            for part in parts:
+                inline_data = getattr(part, "inline_data", None)
+                image_bytes = getattr(inline_data, "data", None) if inline_data else None
+                if not image_bytes:
+                    continue
+                if isinstance(image_bytes, memoryview):
+                    image_bytes = image_bytes.tobytes()
+                if isinstance(image_bytes, (bytes, bytearray)):
                     return {"type": "bytes", "data": bytes(image_bytes)}
-    except APIError:
-        raise
     except Exception as e:
         logger.error(f"Google官方图像生成失败: {str(e)}")
         raise APIError(f"Google官方图像生成失败: {str(e)}")

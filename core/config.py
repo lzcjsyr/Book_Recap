@@ -7,7 +7,7 @@
 # ════════════════════════════════════════════════════════════════════════════════
 from pickle import TRUE
 
-OPENING_QUOTE = True                                 # 是否启用开场金句（影响步骤3、4、5）
+OPENING_QUOTE = False                                 # 是否启用开场金句（影响步骤3、4、5）
 
 # ════════════════════════════════════════════════════════════════════════════════
 # 📝 步骤1：智能总结 - 文档压缩
@@ -286,7 +286,9 @@ for _attr in _USER_CONFIG_ATTRS:
 Config.OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 Config.SEEDREAM_API_KEY = os.getenv('SEEDREAM_API_KEY')
 Config.SILICONFLOW_KEY = os.getenv('SILICONFLOW_KEY')
-Config.GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY') or os.getenv('GOOGLE_CLOUD_API_KEY')
+Config.GOOGLE_CLOUD_API_KEY = os.getenv('GOOGLE_CLOUD_API_KEY')
+# 向后兼容旧代码引用，统一只从 GOOGLE_CLOUD_API_KEY 读取。
+Config.GOOGLE_API_KEY = Config.GOOGLE_CLOUD_API_KEY
 
 
 Config.BYTEDANCE_TTS_APPID = os.getenv('BYTEDANCE_TTS_APPID')
@@ -363,7 +365,7 @@ def _validate_api_keys_impl(cls) -> Dict[str, bool]:
         "openrouter": bool(cls.OPENROUTER_API_KEY),
         "siliconflow": bool(cls.SILICONFLOW_KEY),
         "seedream": bool(cls.SEEDREAM_API_KEY),
-        "google": bool(cls.GOOGLE_API_KEY),
+        "google": bool(cls.GOOGLE_CLOUD_API_KEY),
         "bytedance_tts": bool(cls.BYTEDANCE_TTS_APPID and cls.BYTEDANCE_TTS_ACCESS_TOKEN),
 
     }
@@ -376,7 +378,7 @@ def _get_missing_keys_impl(cls) -> List[str]:
     if not (key_status["openrouter"] or key_status["siliconflow"]):
         missing.append("OPENROUTER_API_KEY 或 SILICONFLOW_KEY (至少一个)")
     if not (key_status["seedream"] or key_status["siliconflow"] or key_status["google"]):
-        missing.append("SEEDREAM_API_KEY 或 SILICONFLOW_KEY 或 GOOGLE_API_KEY(或 GOOGLE_CLOUD_API_KEY)")
+        missing.append("SEEDREAM_API_KEY 或 SILICONFLOW_KEY 或 GOOGLE_CLOUD_API_KEY")
     if not key_status["bytedance_tts"]:
         missing.append("BYTEDANCE_TTS_APPID 和 BYTEDANCE_TTS_ACCESS_TOKEN")
     
@@ -397,7 +399,7 @@ def _get_required_keys_for_config_impl(cls, llm_server: str, image_server: str, 
         if "SILICONFLOW_KEY" not in required_keys:
             required_keys.append("SILICONFLOW_KEY")
     elif image_server == "google":
-        required_keys.append("GOOGLE_API_KEY")
+        required_keys.append("GOOGLE_CLOUD_API_KEY")
     
     if tts_server == "bytedance":
         required_keys.append("BYTEDANCE_TTS_APPID")

@@ -7,6 +7,7 @@ import os
 import concurrent.futures
 import base64
 import datetime
+import time
 
 from core.config import config
 from core.prompts import (
@@ -333,6 +334,11 @@ def _generate_single_image(args) -> Dict[str, Any]:
                 or "sensitive" in lower_error
                 or "content policy" in lower_error
             )
+            is_rate_limit_error = (
+                "resource_exhausted" in lower_error
+                or "too many requests" in lower_error
+                or "429" in lower_error
+            )
 
             if is_sensitive_error and safety_options and desensitize_attempts < max_desensitize:
                 desensitize_attempts += 1
@@ -349,6 +355,12 @@ def _generate_single_image(args) -> Dict[str, Any]:
             attempt += 1
 
             if attempt < max_attempts:
+                if is_rate_limit_error:
+                    wait_seconds = min(2 ** attempt, 8)
+                    logger.warning(
+                        f"第{segment_index}段命中限流，{wait_seconds}秒后重试（第{attempt + 1}/{max_attempts}次）"
+                    )
+                    time.sleep(wait_seconds)
                 logger.warning(
                     f"第{segment_index}段图像生成失败：{error_msg}，准备重试（第{attempt + 1}/{max_attempts}次）"
                 )
@@ -468,6 +480,17 @@ def generate_images_for_segments(
             raise ValueError("未生成有效的提示词")
 
         max_workers = getattr(config, "MAX_CONCURRENT_IMAGE_GENERATION", 3)
+        if image_server == "google":
+            google_limit_raw = os.getenv("GOOGLE_MAX_CONCURRENT_IMAGE_GENERATION", "5")
+            try:
+                google_limit = max(1, int(google_limit_raw))
+            except ValueError:
+                google_limit = 5
+            if max_workers > google_limit:
+                logger.warning(
+                    f"Google图像并发从配置值 {max_workers} 自动下调到 {google_limit}，以降低429限流概率"
+                )
+                max_workers = google_limit
         print(f"使用 {max_workers} 个并发线程生成图像... (本次处理 {len(prompt_payload)} 段)")
 
         image_paths: List[str] = [""] * segment_count

@@ -40,7 +40,7 @@ SEGMENT_VIDEO_EXTENSIONS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".m
 
 def _get_project_root() -> str:
     """Return project root path regardless of package nesting depth."""
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 def _initialize_project(raw_data: Dict[str, Any], output_dir: str) -> tuple:

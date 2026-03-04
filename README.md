@@ -237,8 +237,9 @@ SILICONFLOW_KEY=your_key         # 备选方案
 # 图像生成（至少配置一个）
 SEEDREAM_API_KEY=your_key        # 豆包图像生成
 SILICONFLOW_KEY=your_key         # 硅基流动图像生成
-GOOGLE_API_KEY=your_key          # Google官方生图
-# GOOGLE_CLOUD_API_KEY=your_key  # Google官方示例同名变量（兼容）
+GOOGLE_CLOUD_API_KEY=your_key    # Google Vertex AI 生图（单一配置）
+# Google图像并发上限（可选，默认5，仅 image_server=google 生效）
+# GOOGLE_MAX_CONCURRENT_IMAGE_GENERATION=5
 
 # 语音合成（必需）
 BYTEDANCE_TTS_APPID=your_appid   # 豆包语音
