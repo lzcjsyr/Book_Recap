@@ -480,17 +480,6 @@ def generate_images_for_segments(
             raise ValueError("未生成有效的提示词")
 
         max_workers = getattr(config, "MAX_CONCURRENT_IMAGE_GENERATION", 3)
-        if image_server == "google":
-            google_limit_raw = os.getenv("GOOGLE_MAX_CONCURRENT_IMAGE_GENERATION", "2")
-            try:
-                google_limit = max(1, int(google_limit_raw))
-            except ValueError:
-                google_limit = 2
-            if max_workers > google_limit:
-                logger.warning(
-                    f"Google图像并发从配置值 {max_workers} 自动下调到 {google_limit}，以降低429限流概率"
-                )
-                max_workers = google_limit
         print(f"使用 {max_workers} 个并发线程生成图像... (本次处理 {len(prompt_payload)} 段)")
 
         image_paths: List[str] = [""] * segment_count

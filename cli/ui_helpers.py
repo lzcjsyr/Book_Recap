@@ -570,12 +570,12 @@ def _prompt_segment_generation_scope(
         print(
             f"输入 0 可重新生成{opening_label}；输入 1-{total_segments} 选择段落，可用空格或逗号分隔多个数字。"
         )
-        print(f"💡 提示：可只生成开场金句或部分段落，未生成的段落允许缺失（视频合成前需补全）。输入 q 返回上一级。")
+        print(f"💡 提示：输入 N 可自动检测并补全缺失的{'图片' if step_label == '图像' else '音频'}。输入 q 返回上一级。")
     else:
         print(
             f"输入 1-{total_segments} 选择段落，可用空格或逗号分隔多个数字。"
         )
-        print(f"💡 提示：可只生成部分段落，未生成的段落允许缺失（视频合成前需补全）。输入 q 返回上一级。")
+        print(f"💡 提示：输入 N 可自动检测并补全缺失的{'图片' if step_label == '图像' else '音频'}。输入 q 返回上一级。")
 
     while True:
         try:
@@ -589,6 +589,48 @@ def _prompt_segment_generation_scope(
         if not raw:
             print("❌ 未输入任何内容，请重新输入。")
             continue
+
+        if raw.lower() == 'n':
+            from core.infra.project_paths import ProjectPaths
+            paths = ProjectPaths(project_output_dir)
+            missing_indices = []
+            missing_opening = False
+
+            if allow_opening:
+                if step_label == "图像":
+                    if not os.path.exists(paths.opening_image()):
+                        missing_opening = True
+                elif step_label == "语音":
+                    if not os.path.exists(paths.opening_audio()):
+                        missing_opening = True
+
+            for i in range(1, total_segments + 1):
+                if step_label == "图像":
+                    if not paths.segment_image_exists(i):
+                        # 兼容性检查 jpg / jpeg
+                        if not os.path.exists(os.path.join(paths.images, f"segment_{i}.jpg")) and \
+                           not os.path.exists(os.path.join(paths.images, f"segment_{i}.jpeg")):
+                            missing_indices.append(i)
+                elif step_label == "语音":
+                    if not paths.segment_audio_exists(i):
+                        missing_indices.append(i)
+
+            if not missing_indices and not missing_opening:
+                print(f"✅ 未检测到缺失的{'图片' if step_label == '图像' else '音频'}，请重新选择或输入 q 返回。")
+                continue
+
+            if missing_indices:
+                seg_text = '、'.join(str(i) for i in missing_indices)
+                print(f"✅ 自动检测到以下段落缺失并选择: 第 {seg_text} 段")
+            if missing_opening:
+                print(f"✅ 自动检测到{opening_label}缺失并将重新生成")
+            
+            return {
+                "mode": "partial",
+                "segments": missing_indices,
+                "regenerate_opening": missing_opening,
+                "total_segments": total_segments,
+            }
 
         tokens = raw.replace('，', ' ').replace(',', ' ').split()
         regenerate_opening = False

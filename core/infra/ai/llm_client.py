@@ -244,20 +244,14 @@ def text_to_image_google(prompt, size="1024x1024", model="gemini-3.1-flash-image
         logger.error("未安装google-genai，请运行: pip install google-genai")
         raise APIError("缺少依赖包google-genai") from exc
 
-    client_kwargs: Dict[str, object] = {"vertexai": True}
-    project = os.getenv("GOOGLE_CLOUD_PROJECT")
-    location = os.getenv("GOOGLE_CLOUD_LOCATION")
-    if config.GOOGLE_CLOUD_API_KEY:
-        # google-genai SDK: api_key 与 project/location 互斥
-        client_kwargs["api_key"] = config.GOOGLE_CLOUD_API_KEY
-    else:
-        if project:
-            client_kwargs["project"] = project
-        if location:
-            client_kwargs["location"] = location
+    if not config.GOOGLE_CLOUD_API_KEY:
+        raise APIError("GOOGLE_CLOUD_API_KEY未配置")
 
     try:
-        client = genai.Client(**client_kwargs)
+        client = genai.Client(
+            vertexai=True,
+            api_key=config.GOOGLE_CLOUD_API_KEY
+        )
 
         contents = [
             types.Content(
@@ -268,9 +262,16 @@ def text_to_image_google(prompt, size="1024x1024", model="gemini-3.1-flash-image
         # 保持最小可用参数集，避免可选字段在不同 API 模式下触发 INVALID_ARGUMENT。
         generate_content_config = types.GenerateContentConfig(
             response_modalities=["IMAGE"],
+            safety_settings=[
+                types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
+                types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
+                types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
+                types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
+            ],
             image_config=types.ImageConfig(
                 aspect_ratio=aspect_ratio,
                 image_size=image_size,
+                output_mime_type="image/png",
             ),
         )
 

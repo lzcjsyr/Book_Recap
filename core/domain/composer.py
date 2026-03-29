@@ -277,7 +277,7 @@ class VideoComposer:
         ]
 
         try:
-            subprocess.run(command, check=True)
+            subprocess.run(command, check=True, stdin=subprocess.DEVNULL)
             temp_audio_paths.append(temp_output)
             return temp_output
         except subprocess.CalledProcessError as exc:
@@ -1101,7 +1101,8 @@ class VideoComposer:
                 analysis_command,
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=60,
+                stdin=subprocess.DEVNULL
             )
 
             # 解析loudnorm输出的JSON数据
@@ -1125,7 +1126,7 @@ class VideoComposer:
                     "-af", f"loudnorm=I={target_loudness}:TP=-2.0:LRA={loudness_range}",
                     normalized_path
                 ]
-                subprocess.run(normalize_command, check=True, timeout=120)
+                subprocess.run(normalize_command, check=True, timeout=120, stdin=subprocess.DEVNULL)
                 print(f"🎵 BGM响度标准化完成（单步模式）")
                 return normalized_path
 
@@ -1157,7 +1158,7 @@ class VideoComposer:
                 normalized_path
             ]
 
-            subprocess.run(normalize_command, check=True, timeout=120)
+            subprocess.run(normalize_command, check=True, timeout=120, stdin=subprocess.DEVNULL)
 
             print(f"🎵 BGM响度标准化完成！标准化文件: {os.path.basename(normalized_path)}")
             return normalized_path
@@ -1332,7 +1333,7 @@ class VideoComposer:
             audio_bitrate = '256k'  # 提升到256k以匹配48kHz WAV无损源音频
             
             # 基础参数
-            ffmpeg_extra_params.extend(['-pix_fmt', 'yuv420p', '-movflags', '+faststart'])
+            ffmpeg_extra_params.extend(['-nostdin', '-pix_fmt', 'yuv420p', '-movflags', '+faststart'])
             if vf_filter:
                 ffmpeg_extra_params.extend(['-vf', vf_filter])
 
@@ -1398,7 +1399,7 @@ class VideoComposer:
                 preset=preset,
                 threads=os.cpu_count() or 4,
                 ffmpeg_params=(
-                    ['-crf', crf, '-pix_fmt', 'yuv420p', '-movflags', '+faststart']
+                    ['-nostdin', '-crf', crf, '-pix_fmt', 'yuv420p', '-movflags', '+faststart']
                     + (['-vf', vf_filter] if vf_filter else [])
                 ),
                 logger=moviepy_logger
