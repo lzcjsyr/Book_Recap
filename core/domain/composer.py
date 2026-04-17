@@ -316,7 +316,8 @@ class VideoComposer:
         return ",".join(filter_parts)
 
     def _create_text_image_pil(self, text: str, font_size: int, font_path: str,
-                               text_color: str, stroke_color: str, stroke_width: int) -> Image.Image:
+                               text_color: str, stroke_color: str, stroke_width: int,
+                               ttc_index: int = 0) -> Image.Image:
         """
         使用 PIL 渲染文字到图片，完整保留 descender（下伸笔画）
 
@@ -335,7 +336,7 @@ class VideoComposer:
         """
         try:
             # 加载字体
-            font = ImageFont.truetype(font_path, font_size)
+            font = ImageFont.truetype(font_path, font_size, index=ttc_index)
 
             # 使用临时图片测量文字边界框
             temp_img = Image.new('RGBA', (1, 1), (0, 0, 0, 0))
@@ -940,6 +941,7 @@ class VideoComposer:
             subtitle_config = {
                 "font_size": config.SUBTITLE_FONT_SIZE,
                 "font_family": config.SUBTITLE_FONT_FAMILY,
+                "ttc_index": config.SUBTITLE_FONT_TTC_INDEX,
                 "color": config.SUBTITLE_COLOR,
                 "stroke_color": config.SUBTITLE_STROKE_COLOR,
                 "stroke_width": config.SUBTITLE_STROKE_WIDTH,
@@ -1432,6 +1434,7 @@ class VideoComposer:
             subtitle_config = {
                 "font_size": config.SUBTITLE_FONT_SIZE,
                 "font_family": config.SUBTITLE_FONT_FAMILY,
+                "ttc_index": config.SUBTITLE_FONT_TTC_INDEX,
                 "color": config.SUBTITLE_COLOR,
                 "stroke_color": config.SUBTITLE_STROKE_COLOR,
                 "stroke_width": config.SUBTITLE_STROKE_WIDTH,
@@ -1566,16 +1569,20 @@ class VideoComposer:
         position = subtitle_config["position"]
         margin_bottom = int(subtitle_config.get("margin_bottom", 0))
         anchor_x = position[0] if isinstance(position, tuple) else "center"
+        font_path = resolved_font or subtitle_config["font_family"]
+        ttc_index = int(subtitle_config.get("ttc_index", 0))
         
-        # 创建主要文字剪辑
-        main_clip = TextClip(
+        # 使用 PIL 渲染主要文字（解决 MoviePy TextClip 底部裁切问题）
+        text_img = self._create_text_image_pil(
             text=display_text,
             font_size=subtitle_config["font_size"],
-            color=subtitle_config["color"],
-            font=resolved_font or subtitle_config["font_family"],
+            font_path=font_path,
+            text_color=subtitle_config["color"],
             stroke_color=subtitle_config["stroke_color"],
-            stroke_width=subtitle_config["stroke_width"]
+            stroke_width=subtitle_config["stroke_width"],
+            ttc_index=ttc_index
         )
+        main_clip = ImageClip(np.array(text_img))
         
         # 添加背景条（需要先计算，确定文字位置）
         bg_color = subtitle_config.get("background_color")
@@ -1613,6 +1620,11 @@ class VideoComposer:
             else:
                 main_pos = position
         
+        # 修复 main_pos 如果有字符串 "center" 的相对偏移计算问题
+        # 计算文字具体的 X 和 Y 坐标（为阴影服务）
+        actual_x = (video_width - main_clip.w) // 2 if main_pos[0] == "center" else main_pos[0]
+        actual_y = main_pos[1] if isinstance(main_pos[1], int) else (video_height - main_clip.h) // 2
+        
         # 先设定时间，再设定位置，避免时间轴属性被覆盖
         main_clip = main_clip.with_start(start_time).with_duration(duration).with_position(main_pos)
         
@@ -1620,20 +1632,18 @@ class VideoComposer:
         if subtitle_config.get("shadow_enabled", False):
             shadow_color = subtitle_config.get("shadow_color", "black")
             shadow_offset = subtitle_config.get("shadow_offset", (2, 2))
-            shadow_x = main_pos[0] if isinstance(main_pos[0], int) else 0
-            shadow_y = main_pos[1] if isinstance(main_pos[1], int) else 0
             
-            try:
-                shadow_pos = (shadow_x + shadow_offset[0], shadow_y + shadow_offset[1])
-            except:
-                shadow_pos = main_pos
-            
-            shadow_clip = TextClip(
+            shadow_img = self._create_text_image_pil(
                 text=display_text,
                 font_size=subtitle_config["font_size"],
-                color=shadow_color,
-                font=resolved_font or subtitle_config["font_family"]
-            ).with_start(start_time).with_duration(duration).with_position(shadow_pos)
+                font_path=font_path,
+                text_color=shadow_color,
+                stroke_color=shadow_color,
+                stroke_width=subtitle_config["stroke_width"],
+                ttc_index=ttc_index
+            )
+            shadow_pos = (actual_x + shadow_offset[0], actual_y + shadow_offset[1])
+            shadow_clip = ImageClip(np.array(shadow_img)).with_start(start_time).with_duration(duration).with_position(shadow_pos)
             
             clips_to_add.extend([shadow_clip, main_clip])
         else:

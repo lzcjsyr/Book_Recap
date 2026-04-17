@@ -116,23 +116,24 @@ TRANSITION_STYLE = "slide_right"
 # macOS 苹方字体: /System/Library/Fonts/PingFang.ttc
 # macOS 宋体: /System/Library/Fonts/Supplemental/Songti.ttc
 # Windows 微软雅黑: C:/Windows/Fonts/msyh.ttc
-SUBTITLE_FONT_SIZE = 38                                # 字幕字体大小
-SUBTITLE_FONT_FAMILY = "/System/Library/Fonts/STHeiti Light.ttc"  # 字幕字体路径
+SUBTITLE_FONT_SIZE = 48                                # 字幕字体大小
+SUBTITLE_FONT_FAMILY = "/System/Library/AssetsV2/com_apple_MobileAsset_Font8/86ba2c91f017a3749571a82f2c6d890ac7ffb2fb.asset/AssetData/PingFang.ttc"  # 字幕字体路径 (PingFang SC)
+SUBTITLE_FONT_TTC_INDEX = 11                           # TTC字体索引 (11=PingFang SC Semibold)
 SUBTITLE_COLOR = "white"                               # 字幕文字颜色
 SUBTITLE_STROKE_COLOR = "black"                        # 字幕描边颜色
-SUBTITLE_STROKE_WIDTH = 2                              # 字幕描边粗细
+SUBTITLE_STROKE_WIDTH = 4                              # 字幕描边粗细
 SUBTITLE_POSITION = ("center", "bottom")               # 字幕位置 (水平, 垂直)
-SUBTITLE_MARGIN_BOTTOM = 50                            # 字幕距底部距离 (像素)
-SUBTITLE_MAX_CHARS_PER_LINE = 25                       # 字幕每行最大字符数
+SUBTITLE_MARGIN_BOTTOM = 60                            # 字幕距底部距离 (像素)
+SUBTITLE_MAX_CHARS_PER_LINE = 20                       # 字幕每行最大字符数
 SUBTITLE_MAX_LINES = 1                                 # 字幕最大行数
 SUBTITLE_LINE_SPACING = 15                             # 字幕行间距 (像素)
 SUBTITLE_BACKGROUND_COLOR = (0, 0, 0)                  # 字幕背景色 (RGB, None=透明)
-SUBTITLE_BACKGROUND_OPACITY = 0.8                      # 字幕背景不透明度 (0-1)
+SUBTITLE_BACKGROUND_OPACITY = 0.0                      # 字幕背景不透明度 (0-1)
 SUBTITLE_BACKGROUND_H_PADDING = 20                     # 字幕背景水平内边距 (像素)
 SUBTITLE_BACKGROUND_V_PADDING = 10                     # 字幕背景垂直内边距 (像素)
-SUBTITLE_SHADOW_ENABLED = False                        # 是否启用字幕阴影
+SUBTITLE_SHADOW_ENABLED = True                         # 是否启用字幕阴影
 SUBTITLE_SHADOW_COLOR = "black"                        # 字幕阴影颜色
-SUBTITLE_SHADOW_OFFSET = (2, 2)                        # 字幕阴影偏移 (x, y)
+SUBTITLE_SHADOW_OFFSET = (0, 0)                        # 字幕阴影偏移 (x, y)
 
 # --- 开场金句样式配置 ---
 OPENING_QUOTE_SHOW_TEXT = True                     # 是否在开场图片上显示金句文字（不影响语音朗读）
@@ -252,7 +253,7 @@ _USER_CONFIG_ATTRS = [
     # 视频过渡效果
     'ENABLE_TRANSITIONS', 'TRANSITION_STYLE', 'TRANSITION_DURATION',
     # 字幕配置
-    'SUBTITLE_FONT_SIZE', 'SUBTITLE_FONT_FAMILY', 'SUBTITLE_COLOR',
+    'SUBTITLE_FONT_SIZE', 'SUBTITLE_FONT_FAMILY', 'SUBTITLE_FONT_TTC_INDEX', 'SUBTITLE_COLOR',
     'SUBTITLE_STROKE_COLOR', 'SUBTITLE_STROKE_WIDTH', 'SUBTITLE_POSITION',
     'SUBTITLE_MARGIN_BOTTOM', 'SUBTITLE_MAX_CHARS_PER_LINE', 'SUBTITLE_MAX_LINES',
     'SUBTITLE_LINE_SPACING', 'SUBTITLE_BACKGROUND_COLOR', 'SUBTITLE_BACKGROUND_OPACITY',
