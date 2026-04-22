@@ -64,7 +64,7 @@ package-lock.json
 
 # 文件夹
 合集封面/
-tests/
+/tests/
 web/
 gui/
 build/
