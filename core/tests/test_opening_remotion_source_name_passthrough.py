@@ -57,6 +57,17 @@ def test_render_opening_video_extracts_focus_words_from_markers(monkeypatch, tmp
     assert "".join(captured["props"]["quoteLines"]) == "真正拉开差距的，不是努力，而是你能不能看懂系统。"
 
 
+def test_split_quote_lines_keeps_each_sentence_fragment_on_its_own_line(monkeypatch):
+    monkeypatch.setattr(config, "OPENING_REMOTION_MAX_CHARS_PER_LINE", 20)
+    monkeypatch.setattr(config, "OPENING_REMOTION_MAX_LINES", 4)
+
+    assert opening_renderer._split_quote_lines("第一段，第二段，第三段。") == [
+        "第一段，",
+        "第二段，",
+        "第三段。",
+    ]
+
+
 def test_render_opening_video_distributes_line_appearance_times(monkeypatch, tmp_path: Path):
     captured = {}
 

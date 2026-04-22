@@ -199,9 +199,13 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 								opacity,
 								transform: `translateY(${translateY}px) scale(${scale})`,
 								position: "relative",
-								display: "inline-block",
+								display: "block",
+								width: "fit-content",
+								marginLeft: "auto",
+								marginRight: "auto",
 								padding: "0 20px",
 								overflow: "hidden",
+								whiteSpace: "nowrap",
 							}}
 						>
 							{(() => {

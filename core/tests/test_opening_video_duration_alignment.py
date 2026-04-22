@@ -1,13 +1,16 @@
 from pathlib import Path
+from typing import Optional
 
 from core.domain.composer import VideoComposer
 
 
 class _FakeClip:
-    def __init__(self, duration: float):
+    def __init__(self, duration: float, fps: Optional[float] = None):
         self.duration = duration
+        self.fps = fps
         self.freeze_at = None
         self.requested_duration = None
+        self.last_frame_request = None
 
     def without_audio(self):
         return self
@@ -15,10 +18,26 @@ class _FakeClip:
     def with_audio(self, _audio_clip):
         return self
 
+    def get_frame(self, t: float):
+        self.last_frame_request = t
+        return {"freeze_at": t}
+
     def to_ImageClip(self, t: float):
         freeze = _FakeClip(duration=0.0)
         freeze.freeze_at = t
         return freeze
+
+    def with_duration(self, duration: float):
+        self.requested_duration = duration
+        self.duration = duration
+        return self
+
+
+class _FakeImageClip:
+    def __init__(self, frame):
+        self.freeze_at = frame["freeze_at"]
+        self.duration = 0.0
+        self.requested_duration = None
 
     def with_duration(self, duration: float):
         self.requested_duration = duration
@@ -79,6 +98,7 @@ def test_fit_opening_video_duration_freezes_last_frame_when_audio_is_longer(monk
         return result
 
     monkeypatch.setattr("core.domain.composer.concatenate_videoclips", fake_concatenate)
+    monkeypatch.setattr("core.domain.composer.ImageClip", _FakeImageClip)
 
     result = composer._fit_opening_video_duration(
         opening_video,
@@ -91,6 +111,30 @@ def test_fit_opening_video_duration_freezes_last_frame_when_audio_is_longer(monk
     assert len(captured["clips"]) == 2
     assert captured["clips"][0] is opening_video
     assert captured["clips"][1].freeze_at == 1.5
+    assert captured["clips"][1].requested_duration == 2.5
+
+
+def test_fit_opening_video_duration_uses_last_valid_frame_when_fps_is_available(monkeypatch):
+    composer = VideoComposer()
+    opening_video = _FakeClip(duration=1.5, fps=30.0)
+    captured = {}
+
+    def fake_concatenate(clips, method):
+        captured["clips"] = clips
+        captured["method"] = method
+        return _FakeClip(duration=sum(clip.duration for clip in clips))
+
+    monkeypatch.setattr("core.domain.composer.concatenate_videoclips", fake_concatenate)
+    monkeypatch.setattr("core.domain.composer.ImageClip", _FakeImageClip)
+
+    composer._fit_opening_video_duration(
+        opening_video,
+        target_duration=4.0,
+        clip_label="开场视频",
+    )
+
+    assert captured["method"] == "compose"
+    assert captured["clips"][1].freeze_at == 1.5 - (2 / 30.0)
     assert captured["clips"][1].requested_duration == 2.5
 
 

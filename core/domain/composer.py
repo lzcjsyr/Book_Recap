@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import math
 from contextlib import suppress
 import numpy as np
 from typing import List, Dict, Any, Optional, Tuple
@@ -422,8 +423,10 @@ class VideoComposer:
 
         if original_duration < target_duration:
             still_duration = target_duration - original_duration
+            freeze_time = self._get_last_valid_frame_time(video_clip, original_duration)
             print(f"  {clip_label}较短，定格最后一帧补足 {still_duration:.2f}s")
-            frozen_tail = video_clip.to_ImageClip(t=original_duration).with_duration(still_duration)
+            frozen_frame = video_clip.get_frame(freeze_time)
+            frozen_tail = ImageClip(frozen_frame).with_duration(still_duration)
             return concatenate_videoclips([video_clip, frozen_tail], method="compose")
 
         return self._align_video_duration(
@@ -432,6 +435,29 @@ class VideoComposer:
             long_video_mode=self._resolve_long_video_mode(),
             clip_label=clip_label,
         )
+
+    def _get_last_valid_frame_time(self, video_clip, duration: float) -> float:
+        """返回可安全取帧的末帧时间，避免取到容器 duration 边界外的空帧。"""
+        duration = float(duration or 0.0)
+        if duration <= 0:
+            return 0.0
+
+        fps = float(getattr(video_clip, "fps", 0.0) or 0.0)
+        if fps <= 0:
+            return duration
+
+        frame_step = 1.0 / fps
+        safe_margin = frame_step * 2
+
+        n_frames = getattr(getattr(video_clip, "reader", None), "n_frames", None)
+        if n_frames:
+            last_frame_index = max(int(n_frames) - 2, 0)
+            last_frame_time = last_frame_index / fps
+            return max(0.0, min(duration - safe_margin, last_frame_time))
+
+        estimated_frame_count = max(int(math.floor(duration * fps)), 1)
+        last_frame_index = max(estimated_frame_count - 2, 0)
+        return max(0.0, last_frame_index / fps)
 
     def _apply_fade_in(self, clip, duration: float):
         """

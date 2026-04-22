@@ -9,6 +9,9 @@ from core.domain.metadata import get_primary_golden_quote, parse_marked_focus_te
 from core.shared import logger
 
 
+_QUOTE_BREAK_PUNCTUATION = {"。", "！", "？", "!", "?", "；", ";", "，", ",", "：", ":"}
+
+
 def _parse_size(size: str) -> tuple[int, int]:
     raw = (size or "1280x720").lower().replace(" ", "")
     width, height = raw.split("x", 1)
@@ -32,10 +35,44 @@ def _ensure_remotion_app_dependencies(app_dir: Path) -> None:
     )
 
 
+def _split_quote_fragments(quote: str) -> List[str]:
+    fragments: List[str] = []
+    normalized = (quote or "").replace("\r\n", "\n").replace("\r", "\n")
+
+    for raw_line in normalized.split("\n"):
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        current = ""
+        for char in line:
+            current += char
+            if char in _QUOTE_BREAK_PUNCTUATION:
+                cleaned = current.strip()
+                if cleaned:
+                    fragments.append(cleaned)
+                current = ""
+
+        cleaned = current.strip()
+        if cleaned:
+            fragments.append(cleaned)
+
+    return fragments
+
+
 def _split_quote_lines(quote: str) -> List[str]:
     max_chars = int(getattr(config, "OPENING_REMOTION_MAX_CHARS_PER_LINE", 20))
     max_lines = int(getattr(config, "OPENING_REMOTION_MAX_LINES", 6))
-    lines = VideoComposer().split_text_for_subtitle(quote, max_chars, max_lines)
+    composer = VideoComposer()
+    lines: List[str] = []
+
+    for fragment in _split_quote_fragments(quote):
+        if len(fragment) <= max_chars:
+            lines.append(fragment)
+            continue
+
+        lines.extend(composer.split_text_for_subtitle(fragment, max_chars, max_lines or 999))
+
     if max_lines > 0 and len(lines) > max_lines:
         return lines[: max_lines - 1] + ["".join(lines[max_lines - 1 :])]
     return lines
