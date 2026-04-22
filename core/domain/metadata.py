@@ -1,6 +1,7 @@
 """Helpers for normalizing and reading content metadata from the new schema."""
 
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Tuple
 
 
 def ensure_book_title_format(source_name: str, fallback: str = "") -> str:
@@ -16,6 +17,23 @@ def ensure_book_title_format(source_name: str, fallback: str = "") -> str:
 
 def strip_book_title_marks(text: str) -> str:
     return (text or "").strip().strip("《》").strip()
+
+
+def parse_marked_focus_text(text: str) -> Tuple[str, List[str]]:
+    raw = (text or "").strip()
+    if not raw:
+        return "", []
+
+    focus_words: List[str] = []
+
+    def _replace(match: re.Match[str]) -> str:
+        keyword = (match.group(1) or "").strip()
+        if keyword and keyword not in focus_words:
+            focus_words.append(keyword)
+        return keyword
+
+    clean_text = re.sub(r"【([^【】]+)】", _replace, raw)
+    return clean_text, focus_words
 
 
 def normalize_text_list(raw_value: Any) -> List[str]:

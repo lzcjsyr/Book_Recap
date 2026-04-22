@@ -42,7 +42,6 @@ class VideoGenerationConfig:
     image_model: str = "doubao-seedream-4-0-250828"
     image_size: str = "1664x928"
     image_style_preset: str = "style01"
-    opening_image_style: str = "des01"
     images_method: str = "keywords"  # keywords / description
     
     # ==================== 语音合成配置 ====================
@@ -139,7 +138,6 @@ class StepExecutionConfig:
     image_model: Optional[str] = None
     image_size: Optional[str] = None
     image_style_preset: Optional[str] = None
-    opening_image_style: Optional[str] = None
     images_method: Optional[str] = None
     tts_server: Optional[str] = None
     voice: Optional[str] = None
@@ -190,7 +188,6 @@ class StepExecutionConfig:
             image_model=gen_config.image_model,
             image_size=gen_config.image_size,
             image_style_preset=gen_config.image_style_preset,
-            opening_image_style=gen_config.opening_image_style,
             images_method=gen_config.images_method,
             tts_server=gen_config.tts_server,
             voice=gen_config.voice,

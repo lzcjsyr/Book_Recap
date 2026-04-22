@@ -186,7 +186,7 @@ def detect_project_progress(project_dir: str) -> Dict[str, Any]:
                 if m:
                     image_indices.append(int(m.group(1)))
 
-            # 检测开场图像（opening.png）
+            # 检测开场素材（opening.mp4 / opening.png）
             has_opening_image = os.path.exists(paths.opening_image())
 
             # 步骤3：图像完成条件 - 根据 OPENING_QUOTE 配置调整

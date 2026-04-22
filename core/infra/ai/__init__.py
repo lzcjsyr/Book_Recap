@@ -8,7 +8,6 @@ from core.infra.ai.llm_client import (
 )
 from core.infra.ai.tts_client import text_to_audio_bytedance
 from core.infra.ai.image_client import (
-    generate_opening_image,
     generate_images_for_segments,
     generate_cover_images,
     synthesize_voice_for_segments,
@@ -21,7 +20,6 @@ __all__ = [
     "text_to_image_doubao",
     "text_to_image_google",
     "text_to_image_siliconflow",
-    "generate_opening_image",
     "generate_images_for_segments",
     "generate_cover_images",
     # Audio/TTS

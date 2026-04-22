@@ -12,7 +12,6 @@ from core.domain.metadata import (
     get_cover_subtitles,
     get_cover_titles,
     get_golden_quotes,
-    get_source_name,
     get_video_titles,
     normalize_text_list,
     strip_book_title_marks,
@@ -376,7 +375,10 @@ def process_raw_to_script(raw_data: Dict[str, Any], num_segments: int, split_mod
         video_titles = get_video_titles(raw_data)
         title = video_titles[0] if video_titles else "untitled"
 
-        source_name = get_source_name(raw_data, title)
+        raw_source_name = (raw_data or {}).get("source_name")
+        source_name = raw_source_name.strip() if isinstance(raw_source_name, str) else ""
+        if not source_name:
+            source_name = title
         cover_titles = get_cover_titles(raw_data, title)
         cover_subtitles = get_cover_subtitles(raw_data)
         golden_quotes = get_golden_quotes(raw_data)

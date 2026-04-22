@@ -48,7 +48,6 @@ class GenerationRequest:
     voice: str = ""
     image_style_preset: str = ""
     image_size: str = "1024x1024"
-    opening_image_style: str = ""
     enable_subtitles: bool = True
     bgm_filename: Optional[str] = None
 

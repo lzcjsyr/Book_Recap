@@ -92,11 +92,11 @@ python -m cli
 - **处理**：为每段提取视觉关键词和氛围词（keywords模式）或生成描述摘要（description模式）
 - **输出**：`keywords.json` 或 `mini_summary.json`
 
-### 步骤3：图像生成 - AI配图
+### 步骤3：视觉素材生成 - 开场视频 + AI配图
 
 - **输入**：脚本 + 关键词/描述数据
-- **处理**：AI图像生成模型为每段创建匹配的配图，支持多种风格预设
-- **输出**：开场图片 + 各段配图（PNG格式）
+- **处理**：Remotion 生成开场金句视频，AI图像生成模型为每段创建匹配配图
+- **输出**：开场视频 `images/opening.mp4` + 各段配图（PNG格式）
 - **支持**：指定段落重新生成、切换风格
 
 ### 步骤4：语音合成 - TTS配音
@@ -175,13 +175,19 @@ LLM_MODEL_STEP2 = "moonshotai/Kimi-K2-Instruct-0905"   # 步骤2 LLM模型
 IMAGES_METHOD = "description"                          # 配图方式: keywords/description
 LLM_TEMPERATURE_KEYWORDS = 0.5                          # 提取随机性 (0-1)
 
-# ==================== 🎨 步骤3：图像生成 ====================
+# ==================== 🎨 步骤3：视觉素材生成 ====================
 IMAGE_SERVER = "doubao"                                 # 图像生成供应商: doubao/siliconflow/google
 IMAGE_SIZE = "2560x1440"                               # 图像尺寸 (16:9 横屏)
 IMAGE_MODEL = "doubao-seedream-4-0-250828"             # 图像生成模型
 IMAGE_STYLE_PRESET = "style01"                         # 段落图像风格
-OPENING_IMAGE_STYLE = "des01"                          # 开场图像风格
 MAX_CONCURRENT_IMAGE_GENERATION = 3                    # 并发数
+OPENING_REMOTION_IP_NAME = "Cody叩底"                  # Remotion 开场左上刊头
+OPENING_REMOTION_DURATION_SECONDS = 4.0               # Remotion 开场时长（秒）
+OPENING_REMOTION_FPS = 30                             # Remotion 开场帧率
+OPENING_REMOTION_FIRST_LINE_SECONDS = 0.5             # 第一行出场时间
+OPENING_REMOTION_LAST_LINE_SECONDS = 2.0              # 最后一行出场时间
+OPENING_REMOTION_MAX_LINES = 6                        # 金句最大行数
+OPENING_REMOTION_MAX_CHARS_PER_LINE = 20              # 每行最大字符数
 
 # ==================== 🎙️ 步骤4：语音合成 ====================
 SPEED_RATIO = 1.2                                      # 语速调节 (0.8-2.0)
@@ -191,7 +197,7 @@ MAX_CONCURRENT_VOICE_SYNTHESIS = 5                     # 并发数
 # ==================== 🎬 步骤5：视频合成 ====================
 VIDEO_SIZE = "1280x720"                                # 视频导出尺寸
 ENABLE_SUBTITLES = True                                # 是否启用字幕
-BGM_FILENAME = "Far Away.mp3"                          # 背景音乐文件名
+DEFAULT_BGM_FILENAME = "Far Away.mp3"                  # 默认背景音乐文件名
 BGM_DEFAULT_VOLUME = 0.18                              # BGM音量
 NARRATION_DEFAULT_VOLUME = 2.0                         # 口播音量
 # 更多视频参数: 字幕样式、时间效果、音频闪避等（见 core/config.py）
@@ -247,16 +253,6 @@ BYTEDANCE_TTS_VOICE_ID=your_voice_id
 
 ## 🛠️ 高级功能
 
-### 独立工具
-
-```bash
-# 文档统计分析
-python tools/check_text_stats.py
-
-# 单独测试媒体生成
-python tools/gen_single_media.py
-```
-
 ### 项目管理
 
 - **断点续制**：意外中断可从任意步骤继续
@@ -272,6 +268,10 @@ python tools/gen_single_media.py
 - `core/config.py`：用户配置入口
 - `core/prompts.py`：提示词与风格预设单一来源
 - `core/generation_config.py`：生成参数数据结构
+
+当前对外入口以本地 CLI 为主：
+
+- `cli/`：交互式命令行入口
 
 内部实现按层组织：
 
@@ -289,12 +289,12 @@ output/
 └── 《你的文档标题》_MMDD_HHMM/
     ├── final_video.mp4          # 🎬 最终视频
     ├── images/
-    │   ├── opening.png          # 开场图片
+    │   ├── opening.mp4          # 开场金句视频
     │   └── segment_1.png        # 各段配图
     ├── voice/
-    │   ├── opening.wav          # 开场语音
-    │   ├── voice_1.wav          # 各段语音
-    │   └── 项目名_subtitles.srt  # 字幕文件
+    │   ├── opening.mp3          # 开场语音
+    │   ├── voice_1.mp3          # 各段语音
+    │   └── 字幕.srt             # 字幕文件
     └── text/
         ├── raw.json/.docx       # 总结内容（可编辑）
         ├── script.json/.docx    # 分段脚本（可编辑）

@@ -18,11 +18,9 @@ mobi>=0.3.3
 moviepy>=2.0.0,<3
 numpy>=2.3.0
 
-# API services
+# AI provider SDKs
 volcengine-python-sdk[ark]>=1.0.94
 google-genai>=1.0.0
-fastapi>=0.115.0
-uvicorn>=0.30.0
 
 # Utilities
 json-repair>=0.26.0

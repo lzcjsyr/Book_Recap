@@ -3,8 +3,8 @@
 本文件承载步骤 1~6 的核心实现与跨步骤辅助函数，主要包括：
 1. 项目初始化与目录/文件落盘（raw/script/keywords/音视频资源）。
 2. 文本处理链路（摘要、分段脚本、关键词与描述摘要生成）。
-3. 多媒体生成链路（开场图、分段配图、语音合成、最终视频合成、封面图生成）。
-4. 运行时工具函数（路径解析、开场旁白生成、BGM 定位、失败兜底处理）。
+3. 多媒体生成链路（开场视频、分段配图、语音合成、最终视频合成、封面图生成）。
+4. 运行时工具函数（路径解析、开场旁白生成、BGM 定位、Remotion开场渲染、失败兜底处理）。
 
 设计上保持“单步可独立调用”，便于 CLI 分步重跑、API 精细化控制与测试隔离。
 """
@@ -21,13 +21,13 @@ from core.domain.metadata import (
     get_primary_cover_title,
     get_primary_golden_quote,
     get_primary_video_title,
+    parse_marked_focus_text,
 )
 from core.domain.docx_transform import export_raw_to_docx
 from core.domain.reader import DocumentReader
 from core.infra.ai.image_client import (
     generate_cover_images,
     generate_images_for_segments,
-    generate_opening_image,
     synthesize_voice_for_segments,
 )
 from core.domain.summarizer import (
@@ -39,6 +39,7 @@ from core.domain.summarizer import (
 )
 from core.infra.ai import text_to_audio_bytedance
 from core.infra.project_paths import ProjectPaths
+from core.infra.remotion import render_opening_video
 from core.shared import load_json_file, logger
 
 SEGMENT_VIDEO_EXTENSIONS = (".mp4", ".mov", ".avi", ".mkv", ".webm", ".flv", ".m4v")
@@ -104,6 +105,10 @@ def _ensure_opening_narration(
     """Generate or reuse opening narration audio when required."""
     opening_golden_quote = get_primary_golden_quote(script_data or {}, "")
     if not (opening_quote and isinstance(opening_golden_quote, str) and opening_golden_quote.strip()):
+        return None
+
+    opening_golden_quote, _ = parse_marked_focus_text(opening_golden_quote)
+    if not opening_golden_quote:
         return None
 
     try:
@@ -435,7 +440,6 @@ def run_step_3(
     image_size: str,
     image_style_preset: str,
     project_output_dir: str,
-    opening_image_style: str,
     images_method: str = "keywords",
     opening_quote: bool = True,
     target_segments: Optional[List[int]] = None,
@@ -490,13 +494,16 @@ def run_step_3(
     if opening_quote:
         need_refresh = regenerate_opening or not opening_previously_exists
         if need_refresh:
-            opening_image_path = generate_opening_image(
-                image_server, image_model, opening_image_style, image_size, paths.images, opening_quote
+            opening_image_path = render_opening_video(
+                image_size=image_size,
+                output_dir=paths.images,
+                script_data=script_data,
+                opening_quote=opening_quote,
             )
             opening_regenerated = bool(opening_image_path)
         elif opening_previously_exists:
             opening_image_path = opening_image_file
-            print(f"保持现有开场图像: {opening_image_path}")
+            print(f"保持现有开场视频: {opening_image_path}")
 
     should_generate_segments = selected_segments is None or len(selected_segments) > 0
     if should_generate_segments:
@@ -537,16 +544,16 @@ def run_step_3(
     if selected_segments is None:
         message = "段落图像生成完成"
         if opening_regenerated:
-            message += "，开场图像已更新"
+            message += "，开场视频已更新"
     elif processed_segments:
         seg_text = "、".join(str(idx) for idx in processed_segments)
         message = f"已生成第 {seg_text} 段图像"
         if opening_regenerated:
-            message += " 并刷新开场图像"
+            message += " 并刷新开场视频"
     else:
         message = "未生成新的段落图像"
         if opening_regenerated:
-            message = "已重新生成开场图像"
+            message = "已重新生成开场视频"
 
     payload = {
         "success": True,
@@ -721,7 +728,6 @@ def run_step_5(
 
     bgm_audio_path = _resolve_bgm_audio_path(bgm_filename, project_root)
     opening_image_candidate = paths.opening_image() if os.path.exists(paths.opening_image()) else None
-    opening_golden_quote = get_primary_golden_quote(script_data or {}, "")
     opening_narration_audio_path = _invoke_opening_narration(
         script_data,
         paths.voice,
@@ -746,7 +752,6 @@ def run_step_5(
         enable_subtitles=enable_subtitles,
         bgm_audio_path=bgm_audio_path,
         opening_image_path=opening_image_candidate,
-        opening_golden_quote=opening_golden_quote,
         opening_narration_audio_path=opening_narration_audio_path,
         bgm_volume=float(getattr(config, "BGM_DEFAULT_VOLUME", 0.2)),
         narration_volume=float(getattr(config, "NARRATION_DEFAULT_VOLUME", 1.0)),

@@ -11,7 +11,6 @@ import time
 
 from core.config import config
 from core.prompts import (
-    OPENING_IMAGE_STYLES,
     COVER_IMAGE_STYLE_PRESETS,
     COVER_IMAGE_PROMPT_TEMPLATE,
     IMAGE_STYLE_PRESETS,
@@ -179,32 +178,6 @@ def _desensitize_image_prompt(original_prompt: str, safety_options: Optional[Dic
             return None
 
     return None
-
-
-def generate_opening_image(image_server: str, model: str, opening_style: str,
-                           image_size: str, output_dir: str, opening_quote: bool = True) -> Optional[str]:
-    """生成开场图像，兼容多种服务商"""
-    if not opening_quote:
-        return None
-    try:
-        prompt = OPENING_IMAGE_STYLES.get(opening_style)
-        if not prompt:
-            default_style = next(iter(OPENING_IMAGE_STYLES))
-            logger.warning(f"未找到开场图像风格: {opening_style}，使用默认风格: {default_style}")
-            prompt = OPENING_IMAGE_STYLES[default_style]
-        prompt = str(prompt).strip()
-
-        image_path = os.path.join(output_dir, "opening.png")
-
-        image_result = _request_image_result(image_server, prompt, image_size, model)
-        _persist_image_result(image_result, image_path, "开场图像保存失败")
-
-        logger.info(f"开场图像已保存: {image_path} (风格: {opening_style})")
-        print(f"开场图像已保存: {image_path}")
-        return image_path
-    except Exception as e:
-        logger.warning(f"开场图像生成失败: {e}")
-        return None
 
 
 def _ensure_cover_style(style_id: str) -> Tuple[str, str]:
@@ -809,7 +782,6 @@ def _format_srt_time(seconds: float) -> str:
 
 
 __all__ = [
-    'generate_opening_image',
     'generate_images_for_segments',
     'generate_cover_images',
     'synthesize_voice_for_segments',

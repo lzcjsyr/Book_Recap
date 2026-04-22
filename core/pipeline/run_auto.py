@@ -28,7 +28,6 @@ from core.pipeline.steps import (
 )
 from core.config import Config, config as global_config
 from core.domain.composer import VideoComposer
-from core.domain.metadata import get_primary_golden_quote
 from core.domain.reader import DocumentReader
 from core.domain.summarizer import intelligent_summarize
 from core.generation_config import VideoGenerationConfig
@@ -131,7 +130,6 @@ def run_auto(config: VideoGenerationConfig) -> Dict[str, Any]:
         image_size=config.image_size,
         image_style_preset=config.image_style_preset,
         project_output_dir=project_output_dir,
-        opening_image_style=config.opening_image_style,
         images_method=config.images_method,
         opening_quote=config.opening_quote,
         llm_model=config.llm_model_step2,
@@ -187,7 +185,7 @@ def run_auto(config: VideoGenerationConfig) -> Dict[str, Any]:
     else:
         try:
             bgm_audio_path = _resolve_bgm_audio_path(config.bgm_filename, _get_project_root())
-            opening_golden_quote = get_primary_golden_quote(script_data or {}, "")
+            opening_image_path = step3.get("opening_image_path")
             opening_narration_audio_path = _invoke_opening_narration(
                 script_data,
                 paths.voice,
@@ -209,11 +207,10 @@ def run_auto(config: VideoGenerationConfig) -> Dict[str, Any]:
                 script_data=script_data,
                 enable_subtitles=config.enable_subtitles,
                 bgm_audio_path=bgm_audio_path,
-                opening_image_path=step3.get("opening_image_path"),
-                opening_golden_quote=opening_golden_quote,
+                opening_image_path=opening_image_path,
                 opening_narration_audio_path=opening_narration_audio_path,
-                    bgm_volume=float(getattr(global_config, "BGM_DEFAULT_VOLUME", 0.2)),
-                    narration_volume=float(getattr(global_config, "NARRATION_DEFAULT_VOLUME", 1.0)),
+                bgm_volume=float(getattr(global_config, "BGM_DEFAULT_VOLUME", 0.2)),
+                narration_volume=float(getattr(global_config, "NARRATION_DEFAULT_VOLUME", 1.0)),
                 image_size=config.get_effective_video_size(),
                 opening_quote=config.opening_quote,
                 project_root=project_output_dir,

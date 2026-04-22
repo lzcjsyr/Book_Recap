@@ -2,7 +2,7 @@
 
 ## Goal
 
-`core` is the shared business/runtime layer for all adapters (`cli`, `api`, future UI).
+`core` is the shared business/runtime layer for all adapters (`cli`, future UI).
 Keep orchestration in `pipeline`, business logic in `domain`, and all external systems in `infra`.
 
 ## Current Layout
@@ -47,4 +47,4 @@ core/
 1. `domain/` must not import `core.infra`.
 2. `pipeline/` may import `domain/`, `infra/`, and core shared modules.
 3. `infra/` exports only infrastructure types/utilities.
-4. Adapters (`cli/`, `api/`, `tools/`) should call `core.pipeline` as main entry.
+4. Adapters (`cli/`, future UI) should call `core.pipeline` as main entry.

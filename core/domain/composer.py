@@ -27,7 +27,6 @@ from moviepy import (
 )
 
 from core.config import config
-from core.domain.metadata import get_content_title
 from core.shared import logger, VideoProcessingError, handle_video_operation
 
 # ==================== 系统常量 ====================
@@ -47,7 +46,6 @@ class VideoComposer:
                      bgm_audio_path: Optional[str] = None, bgm_volume: float = 0.15,
                      narration_volume: float = 1.0,
                      opening_image_path: Optional[str] = None,
-                     opening_golden_quote: Optional[str] = None,
                      opening_narration_audio_path: Optional[str] = None,
                      image_size: str = "1280x720",
                      opening_quote: bool = True,
@@ -64,8 +62,7 @@ class VideoComposer:
             bgm_audio_path: 背景音乐路径
             bgm_volume: 背景音乐音量
             narration_volume: 口播音量
-            opening_image_path: 开场图片路径
-            opening_golden_quote: 开场金句
+            opening_image_path: 开场素材路径（图片或视频）
             opening_narration_audio_path: 开场口播音频路径
             image_size: 目标图像尺寸，如"1280x720"
             opening_quote: 是否包含开场金句
@@ -89,7 +86,8 @@ class VideoComposer:
 
             # 检测是否包含视频素材，决定输出帧率
             has_videos = self._has_video_materials(image_paths)
-            target_fps = 30 if has_videos else 15
+            configured_output_fps = int(getattr(config, "VIDEO_OUTPUT_FPS", 0) or 0)
+            target_fps = configured_output_fps if configured_output_fps > 0 else (30 if has_videos else 15)
             print(f"检测到{'视频' if has_videos else '图片'}素材，使用{target_fps}fps输出")
 
             narration_speed_factor = float(getattr(config, "NARRATION_SPEED_FACTOR", 1.0) or 1.0)
@@ -107,19 +105,12 @@ class VideoComposer:
                     temp_audio_paths
                 )
 
-            # 从script_data中提取书名
-            content_title = None
-            if script_data:
-                content_title = get_content_title(script_data)
-
             # 创建开场片段
             opening_seconds = self._create_opening_segment(
                 opening_image_path,
-                opening_golden_quote,
                 processed_opening_audio_path,
                 video_clips,
                 target_size,
-                content_title,
                 opening_quote
             )
 
@@ -173,10 +164,8 @@ class VideoComposer:
     
     @handle_video_operation("开场片段生成", critical=False, fallback_value=0.0)
     def _create_opening_segment(self, opening_image_path: Optional[str],
-                              opening_golden_quote: Optional[str],
                               opening_narration_audio_path: Optional[str],
                               video_clips: List, target_size: Tuple[int, int],
-                              content_title: Optional[str] = None,
                               opening_quote: bool = True) -> float:
         """创建开场片段"""
         opening_seconds = 0.0
@@ -189,8 +178,7 @@ class VideoComposer:
         # 计算开场时长
         if opening_narration_audio_path and os.path.exists(opening_narration_audio_path):
             opening_voice_clip = AudioFileClip(opening_narration_audio_path)
-            hold_after = float(getattr(config, "OPENING_HOLD_AFTER_NARRATION_SECONDS", 2.0))
-            opening_seconds = float(opening_voice_clip.duration) + max(0.0, hold_after)
+            opening_seconds = float(opening_voice_clip.duration)
 
         if opening_image_path and os.path.exists(opening_image_path) and opening_seconds > 1e-3:
             print("正在创建开场片段…")
@@ -205,10 +193,9 @@ class VideoComposer:
                 # 调整时长到音频长度
                 original_duration = opening_base.duration
                 print(f"  开场视频时长: {original_duration:.2f}s，目标时长: {opening_seconds:.2f}s")
-                opening_base = self._align_video_duration(
+                opening_base = self._fit_opening_video_duration(
                     opening_base,
                     opening_seconds,
-                    long_video_mode=self._resolve_long_video_mode(),
                     clip_label="开场视频",
                 )
             else:
@@ -222,24 +209,15 @@ class VideoComposer:
                         img_array = np.array(resized_img)
                         opening_base = ImageClip(img_array).with_duration(opening_seconds)
                 except Exception as e:
-                    logger.warning(f"PIL处理开场图片失败: {e}")
+                    logger.warning(f"PIL处理开场静态素材失败: {e}")
                     opening_base = ImageClip(opening_image_path).with_duration(opening_seconds)
                     opening_base = self._resize_image(opening_base, target_size)
             
-            # 添加开场金句
-            if opening_golden_quote and opening_golden_quote.strip():
-                opening_clip = self._add_opening_quote(opening_base, opening_golden_quote, opening_seconds, content_title)
-            else:
-                opening_clip = opening_base
-            
             # 绑定开场音频
             if opening_voice_clip is not None:
-                opening_clip = opening_clip.with_audio(opening_voice_clip)
-            
-            # 添加渐隐效果
-            opening_clip = self._add_opening_fade_effect(opening_clip, opening_voice_clip, opening_seconds)
-            
-            video_clips.append(opening_clip)
+                opening_base = opening_base.with_audio(opening_voice_clip)
+
+            video_clips.append(opening_base)
 
         return opening_seconds
 
@@ -429,141 +407,31 @@ class VideoComposer:
             logger.warning(f"PIL 文字渲染失败: {e}，将返回空图片")
             return Image.new('RGBA', (1, 1), (0, 0, 0, 0))
 
-    def _add_opening_quote(self, opening_base, opening_golden_quote: str, opening_seconds: float, content_title: Optional[str] = None):
-        """添加开场金句文字叠加（以及可选的书名标题）"""
-        # 检查是否显示文字
-        if not config.OPENING_QUOTE_SHOW_TEXT:
-            return opening_base  # 不显示文字，直接返回原始片段
+    def _fit_opening_video_duration(self, video_clip, target_duration: float, clip_label: str):
+        """按音频时长调整开场视频：短了定格最后一帧，长了按策略压缩或裁剪。"""
+        original_duration = float(getattr(video_clip, "duration", 0.0) or 0.0)
+        target_duration = float(target_duration or 0.0)
 
-        preferred_font_path = config.OPENING_QUOTE_FONT_FAMILY or config.SUBTITLE_FONT_FAMILY
-        resolved_font = self.resolve_font_path(preferred_font_path)
-        base_font = int(config.SUBTITLE_FONT_SIZE)
-        scale = float(config.OPENING_QUOTE_FONT_SCALE)
-        font_size = int(config.OPENING_QUOTE_FONT_SIZE or base_font * scale)
-        text_color = config.OPENING_QUOTE_COLOR
-        stroke_color = config.OPENING_QUOTE_STROKE_COLOR
-        stroke_width = int(config.OPENING_QUOTE_STROKE_WIDTH)
-        pos = config.OPENING_QUOTE_POSITION
-        
-        # 处理文字换行
-        try:
-            max_chars = int(config.OPENING_QUOTE_MAX_CHARS_PER_LINE)
-            max_q_lines = int(config.OPENING_QUOTE_MAX_LINES)
-            candidate_lines = self.split_text_for_subtitle(opening_golden_quote, max_chars, max_q_lines)
-            lines = candidate_lines[:max_q_lines] if candidate_lines else [opening_golden_quote]
-        except Exception:
-            lines = [opening_golden_quote]
+        if target_duration <= 1e-3 or original_duration <= 1e-3:
+            print(f"  {clip_label}时长异常，跳过时长对齐")
+            return video_clip
 
-        # 使用 PIL 渲染文字，完整保留 descender
-        line_spacing = int(config.OPENING_QUOTE_LINE_SPACING)
-        letter_spacing = int(getattr(config, "OPENING_QUOTE_LETTER_SPACING", 0) or 0)
-        video_height = opening_base.h
-        text_clips = []
+        if abs(original_duration - target_duration) <= 1e-3:
+            print(f"  {clip_label}时长匹配，无需调整")
+            return video_clip
 
-        try:
-            # 步骤1: 使用 PIL 渲染每行文字到内存ImageClip
-            line_heights = []
-            line_clips_data = [] # 存储 (ImageClip, height)
+        if original_duration < target_duration:
+            still_duration = target_duration - original_duration
+            print(f"  {clip_label}较短，定格最后一帧补足 {still_duration:.2f}s")
+            frozen_tail = video_clip.to_ImageClip(t=original_duration).with_duration(still_duration)
+            return concatenate_videoclips([video_clip, frozen_tail], method="compose")
 
-            for i, line in enumerate(lines):
-                if line.strip():
-                    # 用 PIL 渲染文字
-                    text_img = self._create_text_image_pil(
-                        text=line,
-                        font_size=font_size,
-                        font_path=resolved_font or preferred_font_path,
-                        text_color=text_color,
-                        stroke_color=stroke_color,
-                        stroke_width=stroke_width,
-                        letter_spacing=letter_spacing,
-                    )
-                    
-                    # 转换为 NumPy 数组 (避免 IO)
-                    # PIL Image (RGBA) -> NumPy array
-                    img_array = np.array(text_img)
-                    line_heights.append(text_img.height)
-                    line_clips_data.append(img_array)
-                else:
-                    line_heights.append(0)
-                    line_clips_data.append(None)
-
-            # 步骤2: 计算总高度和顶部Y坐标
-            total_height = sum(line_heights) + (len(lines) - 1) * line_spacing
-            top_y = max(0, (int(video_height) - int(total_height)) // 2)
-
-            # 步骤3: 创建 ImageClip 并定位
-            current_y = top_y
-            for i, img_array in enumerate(line_clips_data):
-                if img_array is not None:
-                    line_clip = ImageClip(img_array).with_start(0).with_duration(opening_seconds).with_position(("center", current_y))
-                    text_clips.append(line_clip)
-                    current_y += line_heights[i] + line_spacing
-
-            # 步骤4: 如果启用书名显示且有书名，渲染书名标题
-            if config.OPENING_QUOTE_SHOW_TITLE and content_title and content_title.strip():
-                # 格式化书名为 --书名--
-                formatted_title = f"--{content_title}--"
-
-                # 获取书名样式配置
-                title_font_size = int(config.OPENING_QUOTE_TITLE_FONT_SIZE)
-                title_color = config.OPENING_QUOTE_TITLE_COLOR
-                title_stroke_color = config.OPENING_QUOTE_TITLE_STROKE_COLOR
-                title_stroke_width = int(config.OPENING_QUOTE_TITLE_STROKE_WIDTH)
-                title_position_y = float(config.OPENING_QUOTE_TITLE_POSITION_Y)
-
-                # 使用 PIL 渲染书名文字
-                title_img = self._create_text_image_pil(
-                    text=formatted_title,
-                    font_size=title_font_size,
-                    font_path=resolved_font or preferred_font_path,
-                    text_color=title_color,
-                    stroke_color=title_stroke_color,
-                    stroke_width=title_stroke_width,
-                )
-
-                # 转换为 NumPy 数组
-                title_img_array = np.array(title_img)
-
-                # 计算书名的Y坐标（基于相对位置）
-                title_y = int(video_height * title_position_y - title_img.height / 2)
-
-                # 创建书名图层
-                title_clip = ImageClip(title_img_array).with_start(0).with_duration(opening_seconds).with_position(("center", title_y))
-                text_clips.append(title_clip)
-
-            return CompositeVideoClip([opening_base] + text_clips)
-
-        except Exception as e:
-            logger.error(f"开场金句添加失败: {e}")
-            return opening_base
-    
-    def _add_opening_fade_effect(self, opening_clip, opening_voice_clip, opening_seconds: float):
-        """为开场片段添加渐隐效果（仅限开场，时长较短，对性能影响可忽略）"""
-        try:
-            if opening_voice_clip is not None:
-                hold_after = float(getattr(config, "OPENING_HOLD_AFTER_NARRATION_SECONDS", 2.0))
-                if hold_after > 1e-3:
-                    voice_duration = float(opening_voice_clip.duration)
-                    fade_start_time = voice_duration
-                    fade_duration = hold_after
-
-                    def _opening_fade_out(gf, t):
-                        try:
-                            if t < fade_start_time:
-                                return gf(t)
-                            elif t >= opening_seconds:
-                                return 0.0 * gf(t)
-                            else:
-                                fade_progress = (t - fade_start_time) / fade_duration
-                                alpha = max(0.0, 1.0 - fade_progress)
-                                return alpha * gf(t)
-                        except Exception:
-                            return gf(t)
-
-                    opening_clip = opening_clip.transform(_opening_fade_out, keep_duration=True)
-        except Exception as e:
-            logger.warning(f"开场片段渐隐效果添加失败: {e}")
-        return opening_clip
+        return self._align_video_duration(
+            video_clip,
+            target_duration,
+            long_video_mode=self._resolve_long_video_mode(),
+            clip_label=clip_label,
+        )
 
     def _apply_fade_in(self, clip, duration: float):
         """
@@ -1265,6 +1133,8 @@ class VideoComposer:
     
     def _apply_audio_effects(self, bgm_clip, final_video):
         """应用音频效果（Ducking和淡出）"""
+        if not getattr(config, "AUDIO_DUCKING_ENABLED", False):
+            return bgm_clip
         return self._apply_ducking_effect(bgm_clip, final_video)
     
     def _apply_ducking_effect(self, bgm_clip, final_video):
