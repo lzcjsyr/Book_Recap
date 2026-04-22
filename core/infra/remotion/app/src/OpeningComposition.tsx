@@ -70,7 +70,7 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 		: maxByHeight;
 	const quoteFontSize = Math.max(88, Math.min(maxByHeight, maxByWidth, 122));
 	const lineGap = Math.max(18, Math.round(quoteFontSize * 0.18));
-	const bookFontSize = Math.max(44, Math.round(quoteFontSize * 0.44));
+	const bookFontSize = Math.max(54, Math.round(quoteFontSize * 0.54)); // 增大底部书名的基础字号和比例
 	const ipFontSize = Math.max(44, Math.round(quoteFontSize * 0.42)); // 再次大幅增大 IP 字号，基本接近书名字号
 	const quoteOffsetY = lineCount >= 4 ? -0.6 : lineCount >= 3 ? -0.56 : -0.53;
 	const mastheadDraw = interpolate(frame, [0.08 * fps, 0.72 * fps], [0, 1], {
