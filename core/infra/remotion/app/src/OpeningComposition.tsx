@@ -20,6 +20,8 @@ const BG = "#121920";
 const TEXT = "#f3eee4";
 const MUTED = "rgba(236,231,222,0.78)";
 const ACCENT = "#e7c992";
+const SERIF = '"Noto Serif SC", "Songti SC", "STSong", "SimSun", serif';
+const SANS = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
 
 const highlightLine = (line: string, focusWords: string[]) => {
 	if (focusWords.length === 0) {
@@ -49,7 +51,7 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 	quoteLines,
 }) => {
 	const frame = useCurrentFrame();
-	const {fps, height, width} = useVideoConfig();
+	const {fps, height, width, durationInFrames} = useVideoConfig();
 	const lineCount = Math.max(quoteLines.length, 1);
 	const longestLine = quoteLines.reduce((max, line) => Math.max(max, line.length), 0);
 
@@ -69,7 +71,7 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 	const quoteFontSize = Math.max(88, Math.min(maxByHeight, maxByWidth, 122));
 	const lineGap = Math.max(18, Math.round(quoteFontSize * 0.18));
 	const bookFontSize = Math.max(44, Math.round(quoteFontSize * 0.44));
-	const ipFontSize = Math.max(26, Math.round(quoteFontSize * 0.24));
+	const ipFontSize = Math.max(34, Math.round(quoteFontSize * 0.32)); // 增大基础字号和比例
 	const quoteOffsetY = lineCount >= 4 ? -0.6 : lineCount >= 3 ? -0.56 : -0.53;
 	const mastheadDraw = interpolate(frame, [0.08 * fps, 0.72 * fps], [0, 1], {
 		extrapolateLeft: "clamp",
@@ -85,8 +87,13 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 		extrapolateRight: "clamp",
 	});
 
+	// Camera slow zoom on the text
+	const cameraZoom = interpolate(frame, [0, durationInFrames], [1, 1.06], {
+		extrapolateRight: "clamp",
+	});
+
 	return (
-		<AbsoluteFill style={{backgroundColor: BG, fontFamily: "PingFang SC, Hiragino Sans GB, system-ui, sans-serif"}}>
+		<AbsoluteFill style={{backgroundColor: BG, fontFamily: SANS}}>
 			<AbsoluteFill
 				style={{
 					background:
@@ -115,6 +122,16 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 					mixBlendMode: "screen",
 				}}
 			/>
+			{/* Film Grain Overlay */}
+			<AbsoluteFill
+				style={{
+					opacity: 0.06,
+					backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+					mixBlendMode: "overlay",
+					pointerEvents: "none",
+				}}
+			/>
+			
 			<div
 				style={{
 					position: "absolute",
@@ -136,14 +153,14 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 					style={{
 						display: "flex",
 						alignItems: "center",
-						gap: 10,
+						gap: 14, // 增加文字与发光线的间距
 						flexShrink: 0,
 					}}
 				>
 					<div
 						style={{
-							width: 18,
-							height: 2,
+							width: 24, // 加长发光线
+							height: 3, // 加粗发光线
 							borderRadius: 999,
 							background: "linear-gradient(90deg, rgba(231,201,146,0.08), rgba(231,201,146,0.96))",
 							boxShadow: `0 0 12px rgba(231,201,146,${0.22 * mastheadGlow})`,
@@ -179,8 +196,9 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 					left: 20,
 					right: 20,
 					top: "50%",
-					transform: `translateY(${quoteOffsetY * 100}%)`,
+					transform: `translateY(${quoteOffsetY * 100}%) scale(${cameraZoom})`,
 					textAlign: "center",
+					fontFamily: SERIF,
 				}}
 				>
 					{quoteLines.map((line, index) => {
@@ -189,16 +207,19 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 						const entrance = spring({
 							fps,
 							frame: Math.max(0, frame - lineFrameStart),
-						config: {
-							damping: 200,
-							stiffness: 120,
-							mass: 0.6,
-						},
+							config: {
+								damping: 14,
+								stiffness: 140,
+								mass: 0.8,
+							},
 					});
 					const opacity = interpolate(entrance, [0, 1], [0, 1], {
 						extrapolateRight: "clamp",
 					});
-					const translateY = interpolate(entrance, [0, 1], [18, 0], {
+					const translateY = interpolate(entrance, [0, 1], [40, 0], {
+						extrapolateRight: "clamp",
+					});
+					const scale = interpolate(entrance, [0, 1], [1.1, 1], {
 						extrapolateRight: "clamp",
 					});
 
@@ -207,13 +228,13 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 							key={`${line}-${index}`}
 							style={{
 								fontSize: quoteFontSize,
-								lineHeight: 1.2,
-								fontWeight: 800,
+								lineHeight: 1.25,
+								fontWeight: 700,
 								color: TEXT,
 								textShadow: "0 10px 28px rgba(0,0,0,0.38)",
 								marginTop: index === 0 ? 0 : lineGap,
 								opacity,
-								transform: `translateY(${translateY}px)`,
+								transform: `translateY(${translateY}px) scale(${scale})`,
 								position: "relative",
 								display: "inline-block",
 								padding: "0 20px",
@@ -221,10 +242,10 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 							}}
 						>
 							{(() => {
-								const sweepDelay = (lineAppearTime + 0.32) * fps;
+								const sweepDelay = (lineAppearTime + 0.25) * fps;
 								const sweepProgress = interpolate(
 									frame,
-									[sweepDelay, sweepDelay + 0.62 * fps],
+									[sweepDelay, sweepDelay + 0.5 * fps],
 									[0, 1],
 									{
 										extrapolateLeft: "clamp",
@@ -250,7 +271,7 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 											left: "-24%",
 											width: "36%",
 											background:
-												"linear-gradient(90deg, rgba(255,255,255,0), rgba(255,244,213,0.08), rgba(255,244,213,0.5), rgba(255,255,255,0))",
+												"linear-gradient(90deg, rgba(255,255,255,0), rgba(255,244,213,0.15), rgba(255,244,213,0.6), rgba(255,255,255,0))",
 											transform: `translateX(${lineSweepTranslate}%) skewX(-18deg)`,
 											opacity: lineSweepOpacity,
 											mixBlendMode: "screen",
@@ -271,8 +292,13 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 											part.focused
 												? {
 													color: ACCENT,
-													background: `linear-gradient(transparent 64%, rgba(231,201,146,${0.2 + 0.12 * glowOpacity}) 0)`,
-													textShadow: `0 0 12px rgba(231,201,146,${0.12 + 0.08 * glowOpacity})`,
+													fontWeight: 900,
+													fontStyle: "italic",
+													background: `linear-gradient(transparent 64%, rgba(231,201,146,${0.2 + 0.15 * glowOpacity}) 0)`,
+													textShadow: `0 0 16px rgba(231,201,146,${0.18 + 0.12 * glowOpacity})`,
+													display: "inline-block",
+													transform: "scale(1.02)",
+													margin: "0 2px",
 												}
 												: undefined
 										}
@@ -299,7 +325,7 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 						extrapolateLeft: "clamp",
 						extrapolateRight: "clamp",
 					}),
-					transform: `translateY(${interpolate(frame, [1.8 * fps, 2.8 * fps], [8, 0], {
+					transform: `translateY(${interpolate(frame, [1.8 * fps, 2.8 * fps], [12, 0], {
 						extrapolateLeft: "clamp",
 						extrapolateRight: "clamp",
 					})}px)`,
