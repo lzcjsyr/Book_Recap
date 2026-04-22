@@ -25,7 +25,7 @@ const SANS = '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
 
 const highlightLine = (line: string, focusWords: string[]) => {
 	if (focusWords.length === 0) {
-		return [{text: line, focused: false}];
+		return [{ text: line, focused: false }];
 	}
 
 	const escaped = focusWords
@@ -33,7 +33,7 @@ const highlightLine = (line: string, focusWords: string[]) => {
 		.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
 
 	if (escaped.length === 0) {
-		return [{text: line, focused: false}];
+		return [{ text: line, focused: false }];
 	}
 
 	const regex = new RegExp(`(${escaped.join("|")})`, "g");
@@ -51,7 +51,7 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 	quoteLines,
 }) => {
 	const frame = useCurrentFrame();
-	const {fps, height, width, durationInFrames} = useVideoConfig();
+	const { fps, height, width, durationInFrames } = useVideoConfig();
 	const lineCount = Math.max(quoteLines.length, 1);
 	const longestLine = quoteLines.reduce((max, line) => Math.max(max, line.length), 0);
 
@@ -93,37 +93,8 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 	});
 
 	return (
-		<AbsoluteFill style={{backgroundColor: BG, fontFamily: SANS}}>
-			<AbsoluteFill
-				style={{
-					background:
-						"radial-gradient(circle at 50% 22%, rgba(225, 201, 164, 0.12), transparent 24%), linear-gradient(180deg, rgba(6,10,14,0.18), rgba(6,10,14,0.5)), linear-gradient(135deg, #101820 0%, #26343d 52%, #131b22 100%)",
-					transform: `scale(${backgroundScale}) translateX(${backgroundShift}px)`,
-				}}
-			/>
-			<AbsoluteFill
-				style={{
-					background:
-						"repeating-linear-gradient(90deg, transparent 0 36px, rgba(255,255,255,0.018) 36px 37px), linear-gradient(180deg, rgba(255,255,255,0.02), transparent 18%, transparent 82%, rgba(255,255,255,0.02))",
-					opacity: 0.7,
-				}}
-			/>
-			<AbsoluteFill
-				style={{
-					background:
-						"radial-gradient(circle at center, transparent 46%, rgba(0,0,0,0.22) 100%), linear-gradient(180deg, rgba(0,0,0,0.44), transparent 24%, transparent 78%, rgba(0,0,0,0.48))",
-				}}
-			/>
-			<AbsoluteFill
-				style={{
-					background:
-						"radial-gradient(circle at 50% 45%, rgba(231,201,146,0.2), transparent 24%), radial-gradient(circle at 50% 45%, rgba(255,244,213,0.08), transparent 40%)",
-					opacity: focusPulse,
-					mixBlendMode: "screen",
-				}}
-			/>
+		<AbsoluteFill style={{ backgroundColor: BG, fontFamily: SANS }}>
 
-			
 			<div
 				style={{
 					position: "absolute",
@@ -192,18 +163,18 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 					textAlign: "center",
 					fontFamily: SERIF,
 				}}
-				>
-					{quoteLines.map((line, index) => {
-						const lineAppearTime = lineAppearTimes[index] ?? 0.5;
-						const lineFrameStart = lineAppearTime * fps;
-						const entrance = spring({
-							fps,
-							frame: Math.max(0, frame - lineFrameStart),
-							config: {
-								damping: 14,
-								stiffness: 140,
-								mass: 0.8,
-							},
+			>
+				{quoteLines.map((line, index) => {
+					const lineAppearTime = lineAppearTimes[index] ?? 0.5;
+					const lineFrameStart = lineAppearTime * fps;
+					const entrance = spring({
+						fps,
+						frame: Math.max(0, frame - lineFrameStart),
+						config: {
+							damping: 14,
+							stiffness: 140,
+							mass: 0.8,
+						},
 					});
 					const opacity = interpolate(entrance, [0, 1], [0, 1], {
 						extrapolateRight: "clamp",
@@ -277,6 +248,13 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 									extrapolateLeft: "clamp",
 									extrapolateRight: "clamp",
 								});
+								
+								// 持续呼吸感 (Continuous Breathing)
+								// Math.sin(frame / 8) 产生一个平滑的波动周期
+								const breathing = (Math.sin(frame / 8) + 1) / 2; // 值域 0 到 1
+								// 结合入场动画和呼吸波动
+								const activeGlow = glowOpacity * (0.4 + 0.8 * breathing); 
+								
 								return (
 									<span
 										key={`${part.text}-${partIndex}`}
@@ -286,10 +264,12 @@ export const OpeningComposition: React.FC<OpeningCompositionProps> = ({
 													color: ACCENT,
 													fontWeight: 900,
 													fontStyle: "italic",
-													background: `linear-gradient(transparent 64%, rgba(231,201,146,${0.2 + 0.15 * glowOpacity}) 0)`,
-													textShadow: `0 0 16px rgba(231,201,146,${0.18 + 0.12 * glowOpacity})`,
+													background: `linear-gradient(transparent 64%, rgba(231,201,146,${0.15 + 0.25 * activeGlow}) 0)`,
+													// 阴影范围和不透明度同时呼吸
+													textShadow: `0 0 ${12 + 16 * activeGlow}px rgba(231,201,146,${0.15 + 0.3 * activeGlow})`,
 													display: "inline-block",
-													transform: "scale(1.02)",
+													// 极其微弱的大小呼吸，配合光影
+													transform: `scale(${1.01 + 0.02 * activeGlow})`,
 													margin: "0 2px",
 												}
 												: undefined
