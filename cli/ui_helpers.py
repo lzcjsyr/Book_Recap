@@ -523,7 +523,7 @@ def _select_entry_and_context(project_root: str, output_dir: str):
         if not project_dir:
             print("👋 返回上一级")
             continue
-        from core.application.scanner import detect_project_progress
+        from core.pipeline.scanner import detect_project_progress
         
         # 检测项目进度并显示步骤选项
         progress = detect_project_progress(project_dir)
@@ -687,7 +687,7 @@ def _run_specific_step(
     mute_cut_threshold=400, mute_cut_min_silence_ms=200, mute_cut_remain_ms=100
 ):
     """执行指定步骤并返回结果"""
-    from core.application.steps import run_step_1_5, run_step_2, run_step_3, run_step_4, run_step_5, run_step_6
+    from core.pipeline.steps import run_step_1_5, run_step_2, run_step_3, run_step_4, run_step_5, run_step_6
     
     print(f"\n正在执行步骤 {target_step}...")
     
@@ -869,7 +869,7 @@ def _run_step_by_step_loop(
     mute_cut_threshold=400, mute_cut_min_silence_ms=200, mute_cut_remain_ms=100
 ):
     """执行指定步骤，然后进入交互模式让用户选择下一步操作"""
-    from core.application.scanner import detect_project_progress
+    from core.pipeline.scanner import detect_project_progress
     
     # 首先执行指定的步骤
     if initial_step > 0:
@@ -985,8 +985,8 @@ def run_cli_main(
         project_root = os.path.dirname(os.path.dirname(__file__))
             
         from core.config import config, get_generation_params
-        from core.application.run_auto import run_auto
-        from core.application.steps import run_step_1
+        from core.pipeline.run_auto import run_auto
+        from core.pipeline.steps import run_step_1
         
         params = get_generation_params()
         overrides = {
@@ -1098,7 +1098,7 @@ def run_cli_main(
     except Exception:
         # 兼容旧入口：模型与服务商不匹配时自动推断服务商，再次校验
         try:
-            from core.application.provider_resolver import validate_startup_args
+            from core.startup import validate_startup_args
 
             llm_server_step2, _, _ = validate_startup_args(
                 num_segments=num_segments,
@@ -1145,44 +1145,20 @@ def run_cli_main(
         input_file = os.path.join(project_root, input_file)
 
     if run_mode == "auto":
-        # 使用配置对象
         from core.generation_config import VideoGenerationConfig
-        
-        gen_config = VideoGenerationConfig(
+
+        gen_config = VideoGenerationConfig.from_cli_params(
+            params,
             input_file=input_file,
             output_dir=output_dir,
-            num_segments=num_segments,
-            image_size=image_size,
-            llm_server_step2=llm_server_step2,
-            llm_model_step2=llm_model_step2,
-            llm_base_url_step2=llm_base_url_step2,
-            llm_server_step3=llm_server_step3,
-            llm_model_step3=llm_model_step3,
-            llm_base_url_step3=llm_base_url_step3,
-            image_server=image_server,
-            image_model=image_model,
             tts_server=tts_server,
-            voice=voice,
-            tts_model=tts_model,
-            image_style_preset=image_style_preset,
-            images_method=images_method,
-            enable_subtitles=enable_subtitles,
-            bgm_filename=bgm_filename,
-            opening_quote=opening_quote,
-            video_size=video_size,
             cover_image_size=cover_image_size,
-            cover_image_server=cover_image_server,
-            cover_image_model=cover_image_model,
-            cover_image_style=cover_image_style,
-            cover_image_count=cover_image_count,
             speech_rate=speech_rate,
             loudness_rate=loudness_rate,
             emotion=emotion,
             emotion_scale=emotion_scale,
-            mute_cut_remain_ms=mute_cut_remain_ms,
-            mute_cut_threshold=mute_cut_threshold,
         )
-        
+
         result = run_auto(gen_config)
         if result.get("success"):
             print_section("全自动模式完成", "🎬", "=")
@@ -1207,7 +1183,7 @@ def run_cli_main(
         project_output_dir = result.get("project_output_dir")
         
         # 步骤1完成后，进入分步处理循环
-        from core.application.scanner import detect_project_progress
+        from core.pipeline.scanner import detect_project_progress
         
         progress = detect_project_progress(project_output_dir)
         images_method = progress.get('image_method') or images_method

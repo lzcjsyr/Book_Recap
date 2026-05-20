@@ -1,4 +1,6 @@
-"""Provider auto-detection helpers for startup compatibility."""
+"""CLI startup validation: resolve providers from model names."""
+
+from typing import Tuple
 
 from core.config import Config
 
@@ -20,7 +22,6 @@ def auto_detect_server_from_model(model: str, model_type: str) -> str:
             return "doubao"
         if "gemini" in lower_model or "imagen" in lower_model:
             return "google"
-        # Keep legacy default for existing image models like Qwen/Qwen-Image.
         return "siliconflow"
 
     if kind == "voice":
@@ -49,11 +50,29 @@ def ensure_server_supported(server: str, model_type: str) -> str:
     raise ValueError(f"不支持的模型类型: {model_type}")
 
 
-def validate_startup_args(**kwargs):
-    """Backward-compatible shim kept under provider_resolver path."""
-    from core.application.startup_validator import validate_startup_args as _validate
+def validate_startup_args(
+    *,
+    num_segments: int,
+    image_size: str,
+    llm_model: str,
+    image_model: str,
+    voice: str,
+) -> Tuple[str, str, str]:
+    """Resolve providers from model names and validate startup parameters."""
+    llm_server = ensure_server_supported(auto_detect_server_from_model(llm_model, "llm"), "llm")
+    image_server = ensure_server_supported(auto_detect_server_from_model(image_model, "image"), "image")
+    tts_server = ensure_server_supported(auto_detect_server_from_model(voice, "voice"), "voice")
 
-    return _validate(**kwargs)
+    Config.validate_parameters(
+        num_segments=num_segments,
+        llm_server=llm_server,
+        image_server=image_server,
+        tts_server=tts_server,
+        image_model=image_model,
+        image_size=image_size,
+        llm_model=llm_model,
+    )
+    return llm_server, image_server, tts_server
 
 
 __all__ = [

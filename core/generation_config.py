@@ -3,7 +3,7 @@
 集中管理视频生成流程的所有参数，避免函数参数过多
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 
@@ -17,6 +17,15 @@ def _infer_image_server_from_model(model: str) -> str:
     if lower_model:
         return "siliconflow"
     return ""
+
+
+# get_generation_params() 键名 -> VideoGenerationConfig 字段名
+_CLI_PARAM_ALIASES = (
+    ("tts_emotion", "emotion"),
+    ("tts_emotion_scale", "emotion_scale"),
+    ("tts_speech_rate", "speech_rate"),
+    ("tts_loudness_rate", "loudness_rate"),
+)
 
 
 @dataclass
@@ -83,6 +92,23 @@ class VideoGenerationConfig:
             self.cover_image_server = inferred_cover_server or self.image_server
     
     @classmethod
+    def from_cli_params(
+        cls,
+        params: dict,
+        *,
+        input_file: str,
+        output_dir: str,
+        **overrides,
+    ) -> "VideoGenerationConfig":
+        """从 get_generation_params() 风格字典创建配置（含 CLI 字段别名）。"""
+        data = dict(params)
+        for src, dst in _CLI_PARAM_ALIASES:
+            if src in data:
+                data[dst] = data.pop(src)
+        data.update(input_file=input_file, output_dir=output_dir, **overrides)
+        return cls.from_dict(data)
+
+    @classmethod
     def from_dict(cls, params: dict) -> "VideoGenerationConfig":
         """
         从字典创建配置对象
@@ -126,82 +152,4 @@ class VideoGenerationConfig:
         return self.cover_image_server or inferred_cover_server or self.image_server
 
 
-@dataclass
-class StepExecutionConfig:
-    """单步执行配置（用于分步模式）"""
-    
-    project_output_dir: str
-    
-    # 可选参数（不同步骤需要不同参数）
-    llm_server: Optional[str] = None
-    llm_base_url: Optional[str] = None
-    llm_model: Optional[str] = None
-    image_server: Optional[str] = None
-    image_model: Optional[str] = None
-    image_size: Optional[str] = None
-    image_style_preset: Optional[str] = None
-    images_method: Optional[str] = None
-    tts_server: Optional[str] = None
-    voice: Optional[str] = None
-    tts_model: Optional[str] = None
-    speech_rate: int = 0
-    loudness_rate: int = 0
-    emotion: str = "neutral"
-    emotion_scale: int = 4
-    mute_cut_remain_ms: int = 100
-    mute_cut_threshold: int = 400
-    enable_subtitles: bool = True
-    bgm_filename: Optional[str] = None
-    opening_quote: bool = True
-    target_segments: Optional[list] = None
-    regenerate_opening: bool = True
-    
-    @classmethod
-    def from_generation_config(
-        cls, 
-        gen_config: VideoGenerationConfig,
-        project_output_dir: str,
-        step_number: int = 2
-    ) -> "StepExecutionConfig":
-        """
-        从 VideoGenerationConfig 创建步骤执行配置
-        
-        Args:
-            gen_config: 视频生成配置
-            project_output_dir: 项目输出目录
-            step_number: 步骤号（1或2），用于选择对应的LLM配置
-            
-        Returns:
-            StepExecutionConfig: 步骤执行配置
-        """
-        _ = step_number
-        llm_server = gen_config.llm_server_step2
-        llm_base_url = gen_config.llm_base_url_step2
-        llm_model = gen_config.llm_model_step2
-            
-        return cls(
-            project_output_dir=project_output_dir,
-            llm_server=llm_server,
-            llm_base_url=llm_base_url,
-            llm_model=llm_model,
-            image_server=gen_config.image_server,
-            image_model=gen_config.image_model,
-            image_size=gen_config.image_size,
-            image_style_preset=gen_config.image_style_preset,
-            images_method=gen_config.images_method,
-            tts_server=gen_config.tts_server,
-            voice=gen_config.voice,
-            tts_model=gen_config.tts_model,
-            speech_rate=gen_config.speech_rate,
-            loudness_rate=gen_config.loudness_rate,
-            emotion=gen_config.emotion,
-            emotion_scale=gen_config.emotion_scale,
-            mute_cut_remain_ms=gen_config.mute_cut_remain_ms,
-            mute_cut_threshold=gen_config.mute_cut_threshold,
-            enable_subtitles=gen_config.enable_subtitles,
-            bgm_filename=gen_config.bgm_filename,
-            opening_quote=gen_config.opening_quote,
-        )
-
-
-__all__ = ['VideoGenerationConfig', 'StepExecutionConfig']
+__all__ = ["VideoGenerationConfig"]

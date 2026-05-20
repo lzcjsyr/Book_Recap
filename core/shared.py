@@ -13,7 +13,7 @@
 被以下模块调用:
 - core/pipeline.py: 兼容入口
 - core/domain/*: 业务层能力复用
-- core/application/*: 编排与流程管理
+- core/pipeline/*: 编排与流程管理
 - cli/__main__.py: 日志配置和异常类
 - cli/ui_helpers.py: 间接通过核心模块使用
 """

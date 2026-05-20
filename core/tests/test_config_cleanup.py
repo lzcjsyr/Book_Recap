@@ -2,6 +2,20 @@ from core.config import config, get_generation_params
 from core.generation_config import VideoGenerationConfig
 
 
+def test_from_cli_params_maps_tts_aliases():
+    params = get_generation_params()
+    gen = VideoGenerationConfig.from_cli_params(
+        params,
+        input_file="input/book.pdf",
+        output_dir="output",
+        tts_server="bytedance",
+    )
+    assert gen.speech_rate == params["tts_speech_rate"]
+    assert gen.emotion == params["tts_emotion"]
+    assert gen.input_file == "input/book.pdf"
+    assert gen.num_segments == params["num_segments"]
+
+
 def test_generation_params_drop_legacy_opening_image_style():
     params = get_generation_params()
 

@@ -18,8 +18,6 @@ def test_generation_params_match_cli_entrypoint_signature():
     assert "llm_api_key_env_step1" not in params
     assert "llm_skill_step1" not in params
     assert "llm_server_step1" not in params
-    assert "llm_base_url_step1" not in params
-    assert "llm_model_step1" not in params
     assert "target_length" not in params
 
 
@@ -30,9 +28,9 @@ def test_config_uses_single_llm_configuration_shape():
     assert hasattr(config, "LLM_SERVER_STEP3")
     assert hasattr(config, "LLM_BASE_URL_STEP2")
     assert hasattr(config, "LLM_BASE_URL_STEP3")
+    assert hasattr(config, "LLM_BASE_URL_STEP1")
+    assert hasattr(config, "LLM_MODEL_STEP1")
     assert not hasattr(config, "LLM_SERVER_STEP1")
-    assert not hasattr(config, "LLM_BASE_URL_STEP1")
-    assert not hasattr(config, "LLM_MODEL_STEP1")
     assert not hasattr(config, "TARGET_LENGTH")
     assert not hasattr(config, "SILICONFLOW_BASE_URL")
     assert not hasattr(config, "OPENROUTER_BASE_URL")

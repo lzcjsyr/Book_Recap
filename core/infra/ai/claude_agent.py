@@ -6,11 +6,23 @@ from pathlib import Path
 import anyio
 from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 
+from core.config import config
 from core.prompts import build_step1_agent_prompt
 
 
 STEP1_AGENT_TOOLS = ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill"]
 STEP1_AGENT_SKILL = "video-book-direct-read"
+
+
+def build_step1_agent_env() -> dict[str, str]:
+    api_key = (config.MIMO_API_KEY or "").strip()
+    if not api_key:
+        raise RuntimeError("步骤1需要 MIMO_API_KEY（.env），用于驱动 Claude Agent SDK")
+    return {
+        "ANTHROPIC_BASE_URL": config.LLM_BASE_URL_STEP1,
+        "ANTHROPIC_API_KEY": api_key,
+        "ANTHROPIC_MODEL": config.LLM_MODEL_STEP1,
+    }
 
 
 async def _run_step1_agent_async(
@@ -31,12 +43,13 @@ async def _run_step1_agent_async(
     )
     options = ClaudeAgentOptions(
         cwd=repo_root,
+        model=config.LLM_MODEL_STEP1,
         tools=STEP1_AGENT_TOOLS,
         allowed_tools=STEP1_AGENT_TOOLS,
         skills=[STEP1_AGENT_SKILL],
         permission_mode="acceptEdits",
         max_turns=80,
-        setting_sources=["user", "project", "local"],
+        env=build_step1_agent_env(),
     )
 
     async for message in query(prompt=prompt, options=options):

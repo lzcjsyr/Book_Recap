@@ -161,8 +161,10 @@ python -m cli
 OPENING_QUOTE = True                                   # 开场金句开关（影响步骤3+5）
 
 # ==================== 📝 步骤1：Claude Agent SDK写作 ====================
+# 步骤1通过小米 MiMo Anthropic 端点驱动 Claude Agent SDK（.env: MIMO_API_KEY）
+LLM_BASE_URL_STEP1 = "https://token-plan-sgp.xiaomimimo.com/anthropic"
+LLM_MODEL_STEP1 = "mimo-v2.5"   # 可选: mimo-v2.5-pro, mimo-v2-pro
 # 步骤1固定调用 core/skills/video-book-direct-read 生成 raw.json
-# 文稿字数和字段格式由该 skill 的 output-contract.md 管理
 
 # ==================== ✂️ 步骤1.5：脚本分段 ====================
 NUM_SEGMENTS = 25                                       # 视频分段数量 (5-50)
@@ -233,7 +235,10 @@ COVER_IMAGE_COUNT = 1                                  # 生成数量
 在 `.env` 文件中配置以下密钥：
 
 ```env
-# LLM服务（至少配置一个）
+# 步骤1 Claude Agent（必需）
+MIMO_API_KEY=your_key            # 小米 MiMo，驱动步骤1
+
+# LLM服务（至少配置一个，步骤2/3）
 OPENROUTER_API_KEY=your_key      # 推荐，模型选择多
 SILICONFLOW_KEY=your_key         # 备选方案
 
@@ -273,9 +278,9 @@ BYTEDANCE_TTS_VOICE_ID=your_voice_id
 
 内部实现按层组织：
 
-- `core/application/`：编排层（workflow/service/step_runner/steps）
+- `core/pipeline/`：编排层（run_auto/steps/scanner）
 - `core/domain/`：业务能力（document/script/media/video）
-- `core/infra/`：外部适配（ai/storage/jobs/security）
+- `core/infra/`：外部适配（ai/storage）
 - `core/shared/`：通用能力（logger/errors/retry/file/json）
 
 详细说明见 `core/ARCHITECTURE.md`。

@@ -67,6 +67,20 @@ def test_step_1_rejects_agent_output_that_does_not_match_raw_contract(tmp_path: 
         raise AssertionError("invalid Step 1 raw JSON should be rejected")
 
 
+def test_build_step1_agent_env_uses_mimo_gateway(monkeypatch):
+    from core.infra.ai.claude_agent import build_step1_agent_env
+
+    monkeypatch.setattr(
+        "core.infra.ai.claude_agent.config.MIMO_API_KEY",
+        "test-mimo-key",
+        raising=False,
+    )
+    env = build_step1_agent_env()
+    assert env["ANTHROPIC_BASE_URL"] == "https://token-plan-sgp.xiaomimimo.com/anthropic"
+    assert env["ANTHROPIC_API_KEY"] == "test-mimo-key"
+    assert env["ANTHROPIC_MODEL"] == "mimo-v2.5"
+
+
 def test_step1_agent_prompt_includes_absolute_skill_path_and_target_segments(tmp_path: Path):
     from core.prompts import build_step1_agent_prompt
 

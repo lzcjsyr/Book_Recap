@@ -11,8 +11,8 @@ Keep orchestration in `pipeline`, business logic in `domain`, and all external s
 core/
 ├── __init__.py
 ├── config.py
-├── contracts.py
 ├── generation_config.py
+├── startup.py             # CLI startup validation (provider resolution)
 ├── llm_gateway.py         # Domain-safe gateway to LLM text generation
 ├── prompts.py
 ├── shared.py
@@ -21,7 +21,6 @@ core/
 │   ├── __init__.py
 │   ├── run_auto.py
 │   ├── scanner.py
-│   ├── service.py
 │   └── steps.py
 │
 ├── domain/                # Domain/business logic
@@ -38,8 +37,7 @@ core/
     │   ├── image_client.py
     │   ├── llm_client.py
     │   └── tts_client.py  # Includes silence trimming helper
-    ├── project_paths.py
-    └── sqlite_store.py
+    └── project_paths.py
 ```
 
 ## Dependency Rules
