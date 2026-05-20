@@ -306,8 +306,8 @@ def display_file_menu(files: List[Dict[str, Any]]) -> None:
     print_section("发现以下可处理的文件", "📚", "=")
     
     if not files:
-        print("❌ 在input文件夹中未找到PDF、EPUB、MOBI或AZW3文件")
-        print("请将要处理的PDF、EPUB、MOBI或AZW3文件放入input文件夹中")
+        print("❌ 在input文件夹中未找到PDF、EPUB、MOBI、AZW3、DOCX或DOC文件")
+        print("请将要处理的PDF、EPUB、MOBI、AZW3、DOCX或DOC文件放入input文件夹中")
         return
     
     for i, file_info in enumerate(files, 1):

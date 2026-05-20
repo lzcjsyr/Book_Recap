@@ -22,7 +22,7 @@ def scan_input_files(input_dir: str = "input") -> List[Dict[str, Any]]:
         logger.warning(f"输入目录不存在: {input_dir}")
         return []
 
-    supported_extensions = [".pdf", ".epub", ".mobi", ".azw3"]
+    supported_extensions = [".pdf", ".epub", ".mobi", ".azw3", ".docx", ".doc"]
     files: List[Dict[str, Any]] = []
     logger.info(f"CLI 正在扫描输入目录: {input_dir}")
 
