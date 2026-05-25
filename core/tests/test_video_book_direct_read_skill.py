@@ -67,3 +67,17 @@ def test_skill_no_longer_references_separate_output_contract():
         SKILL_DIR / "references" / "revision-workflow.md",
     ]:
         assert "output-contract.md" not in path.read_text(encoding="utf-8")
+
+
+def test_revision_workflow_uses_compact_three_draft_flow():
+    workflow = (SKILL_DIR / "references" / "revision-workflow.md").read_text(encoding="utf-8")
+
+    assert "_draft_v1.txt" in workflow
+    assert "_draft_v2_structure.txt" in workflow
+    assert "_draft_final.txt" in workflow
+    assert "_revision_audit.json" in workflow
+    assert "_draft_v2_faithfulness.txt" not in workflow
+    assert "_draft_v3_structure.txt" not in workflow
+    assert "_draft_v4_oral_style.txt" not in workflow
+    assert "初稿自查" in workflow
+    assert "价值承诺" in workflow

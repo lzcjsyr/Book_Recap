@@ -137,9 +137,7 @@ class AgentSessionLog:
     def _is_persisted_read_path(path: str) -> bool:
         return Path(path).name in {
             "_draft_v1.txt",
-            "_draft_v2_faithfulness.txt",
-            "_draft_v3_structure.txt",
-            "_draft_v4_oral_style.txt",
+            "_draft_v2_structure.txt",
             "_draft_final.txt",
             "_revision_audit.json",
             "raw.json",
