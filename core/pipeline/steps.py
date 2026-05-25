@@ -96,6 +96,13 @@ def _create_step1_project(input_file: str, output_dir: str) -> tuple[str, Projec
 
 def load_step1_agent_raw(raw_json_path: str, expected_segments: int) -> Dict[str, Any]:
     raw_data = load_json_file(raw_json_path)
+    if raw_data.get("target_segments") != expected_segments:
+        raw_data["target_segments"] = expected_segments
+        try:
+            with open(raw_json_path, "w", encoding="utf-8") as handle:
+                json.dump(raw_data, handle, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
     required_fields = {
         "source_name": str,
         "video_titles": list,
@@ -114,8 +121,6 @@ def load_step1_agent_raw(raw_json_path: str, expected_segments: int) -> Dict[str
             errors.append(field)
         elif not isinstance(raw_data[field], expected_type):
             errors.append(f"{field}类型错误")
-    if raw_data.get("target_segments") != expected_segments:
-        errors.append("target_segments")
     content = raw_data.get("content")
     if isinstance(content, str) and ("\n" in content or "\r" in content):
         errors.append("content不能分段")
@@ -330,6 +335,7 @@ def run_step_1(
     input_file: str,
     output_dir: str,
     num_segments: int,
+    extra_requirements: str = "",
 ) -> Dict[str, Any]:
     project_output_dir, paths = _create_step1_project(input_file, output_dir)
     skill_path = os.path.join(_get_project_root(), "core", "skills", "video-book-direct-read")
@@ -347,6 +353,7 @@ def run_step_1(
         num_segments=num_segments,
         skill_path=skill_path,
         repo_root=_get_project_root(),
+        extra_requirements=extra_requirements,
     )
     raw_data = load_step1_agent_raw(paths.raw_json(), expected_segments=num_segments)
 

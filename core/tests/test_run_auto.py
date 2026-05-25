@@ -36,15 +36,16 @@ def test_run_auto_success_uses_raw_data_for_cover_and_statistics(monkeypatch, tm
 
     captured = {}
 
-    monkeypatch.setattr(
-        run_auto_module,
-        "_run_step_1",
-        lambda *_args, **_kwargs: {
+    def fake_step_1(*args, **kwargs):
+        captured["step1_args"] = args
+        captured["step1_kwargs"] = kwargs
+        return {
             "success": True,
             "project_output_dir": str(project_dir),
             "raw": {"total_length": 1000},
-        },
-    )
+        }
+
+    monkeypatch.setattr(run_auto_module, "_run_step_1", fake_step_1)
     monkeypatch.setattr(
         run_auto_module,
         "_run_step_1_5",
@@ -105,6 +106,7 @@ def test_run_auto_success_uses_raw_data_for_cover_and_statistics(monkeypatch, tm
         cover_image_server="google",
         cover_image_model="gemini-3.1-flash-image-preview",
         cover_image_size="1280x720",
+        extra_requirements="突出商业启示",
     )
 
     result = run_auto_module.run_auto(config)
@@ -114,3 +116,4 @@ def test_run_auto_success_uses_raw_data_for_cover_and_statistics(monkeypatch, tm
     assert result["statistics"]["compression_ratio"] == "75.0%"
     assert result["cover_images"] == ["cover.png"]
     assert captured["raw_data"]["content"] == "x" * 1000
+    assert captured["step1_kwargs"]["extra_requirements"] == "突出商业启示"

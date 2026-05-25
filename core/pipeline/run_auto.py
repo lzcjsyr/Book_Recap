@@ -61,7 +61,12 @@ def run_auto(config: VideoGenerationConfig) -> Dict[str, Any]:
     except Exception as exc:
         return {"success": False, "message": f"参数验证失败: {exc}"}
 
-    step1 = _run_step_1(config.input_file, config.output_dir, config.num_segments)
+    step1 = _run_step_1(
+        config.input_file,
+        config.output_dir,
+        config.num_segments,
+        extra_requirements=config.extra_requirements,
+    )
     if not step1.get("success"):
         return {"success": False, "message": step1.get("message", "步骤1处理失败")}
     project_output_dir = step1["project_output_dir"]

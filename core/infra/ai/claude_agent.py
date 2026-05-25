@@ -23,7 +23,7 @@ from core.config import config
 from core.prompts import build_step1_agent_prompt
 
 STEP1_AGENT_TOOLS = ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "Skill"]
-STEP1_AGENT_SKILL = "video-book-direct-read"
+STEP1_AGENT_SKILL = config.STEP1_AGENT_SKILL
 
 STEP1_EXTRACT_NAME = "_extract.txt"
 STEP1_COVERAGE_LEDGER_NAME = "_coverage_ledger.json"
@@ -159,6 +159,18 @@ class AgentSessionLog:
 
         compacted_message = dict(message)
         compacted_message["content"] = compacted_content
+        tool_use_result = compacted_message.get("tool_use_result")
+        if isinstance(tool_use_result, dict):
+            tool_use_id = tool_use_result.get("tool_use_id")
+            is_error = tool_use_result.get("is_error") is True
+            if isinstance(tool_use_id, str) and tool_use_id in self._omitted_bash_read_tool_ids and not is_error:
+                compacted_result = dict(tool_use_result)
+                stdout = compacted_result.get("stdout")
+                if isinstance(stdout, str):
+                    compacted_result["stdout"] = _OMITTED_BASH_READ_CONTENT
+                    compacted_result["stdout_length"] = len(stdout)
+                    compacted_result["log_omitted"] = "bash_extract_window_output"
+                    compacted_message["tool_use_result"] = compacted_result
         return {**payload, "message": compacted_message}
 
     def append(self, event: str, payload: dict[str, Any]) -> None:
@@ -187,15 +199,14 @@ async def _run_step1_agent_async(
     num_segments: int,
     skill_path: str,
     repo_root: str,
+    extra_requirements: str = "",
 ) -> None:
     prompt = build_step1_agent_prompt(
         input_file=input_file,
         output_json=output_json,
-        extract_path=extract_path,
-        coverage_ledger_path=coverage_ledger_path,
         text_dir=text_dir,
-        num_segments=num_segments,
         skill_path=skill_path,
+        extra_requirements=extra_requirements,
     )
     options = ClaudeAgentOptions(
         cwd=repo_root,
@@ -221,6 +232,7 @@ async def _run_step1_agent_async(
             "num_segments": num_segments,
             "skill_path": skill_path,
             "repo_root": repo_root,
+            "extra_requirements": extra_requirements,
             "add_dirs": _step1_agent_add_dirs(input_file),
             "model": config.LLM_MODEL_STEP1,
             "tools": STEP1_AGENT_TOOLS,
@@ -273,6 +285,7 @@ def run_step1_agent(
     num_segments: int,
     skill_path: str,
     repo_root: str,
+    extra_requirements: str = "",
 ) -> None:
     runner = partial(
         _run_step1_agent_async,
@@ -285,5 +298,6 @@ def run_step1_agent(
         num_segments=num_segments,
         skill_path=skill_path,
         repo_root=repo_root,
+        extra_requirements=extra_requirements,
     )
     anyio.run(runner)

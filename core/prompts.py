@@ -9,44 +9,18 @@
 
 STEP1_AGENT_PROMPT_TEMPLATE = """你在仓库根目录工作。
 
-任务：阅读 `{input_file}`，按已启用的原生 skill 生成第一步 raw JSON，保存到 `{output_json}`。
+任务：处理 `{input_file}`，生成第一步 raw JSON 并保存到 `{output_json}`。
 
-执行顺序（必须按序，不可跳步）：
-1. 先读取 `{skill_path}` 和它指向的必要 references，先明确读取策略。
-2. 抽取原文到 `{extract_path}`（PDF/EPUB/MOBI/AZW3/DOCX/DOC 等先抽取；.md/.txt 复制或规范化到该路径；禁止直接 Read 大 PDF）。
-3. 按 `references/reading-strategy.md` 制定读取计划，**先创建 `{coverage_ledger_path}` 初始台账**，再主要用 Bash（`sed`/`awk`）按每窗 **不超过 23000 字符** 连续读取 `{extract_path}`，每读完一窗立即落盘更新台账。
-4. 将覆盖台账保存到 `{coverage_ledger_path}`，按 skill 完成覆盖自检后再进入写稿：15 万字符以内必须全部读完；15-20 万字符至少覆盖 80%；超过 20 万字符至少覆盖 50%，且必须均匀覆盖全书并理解全书轮廓和核心思想；所有已读窗口必须 `complete`。
-5. 覆盖自检通过后，再读 `writing-standard.md` 与 `revision-workflow.md`，完成多轮修订落盘，最后生成 `{output_json}`。
+运行上下文：
+- 先读取 `{skill_path}`，并按它指向的 references 执行。
+- 工作目录：`{text_dir}`。需要落盘的中间产物放在这里，具体文件名和流程以 `{skill_path}` 为准。
 
-按 skill 的硬性顺序（不要提前写 raw JSON）：
-- 先完成 `{extract_path}` 抽取，再创建 `{coverage_ledger_path}` 初始台账；随后 Bash 连续读取正文，并逐窗落盘更新台账。
-- 覆盖自检未通过前，禁止写初稿、修订稿或 `{output_json}`。
-- 修订中间稿与 `_revision_audit.json` 落在 `{text_dir}`。
+用户额外要求：{extra_requirements}
 
-硬性要求：
-- 输出 JSON 必须能被 Python `json.loads` 解析，且保存到 `{output_json}`。
-- `target_segments` 必须写为 {num_segments}。
-- JSON schema、字段、字数和 `content` 格式以已启用 skill 的输出契约为准。"""
-
-def build_step1_agent_prompt(
-    input_file: str,
-    output_json: str,
-    extract_path: str,
-    coverage_ledger_path: str,
-    text_dir: str,
-    num_segments: int,
-    skill_path: str,
-) -> str:
-    """Build the Claude Agent prompt used by Step 1 raw script generation."""
-    return STEP1_AGENT_PROMPT_TEMPLATE.format(
-        input_file=input_file,
-        output_json=output_json,
-        extract_path=extract_path,
-        coverage_ledger_path=coverage_ledger_path,
-        text_dir=text_dir,
-        num_segments=num_segments,
-        skill_path=skill_path,
-    )
+外层硬约束：
+- 不要绕过 `{skill_path}`；具体读取策略、中间产物、写作流程和 JSON 输出契约都以该路径内容为准。
+- 保存的 `{output_json}` 必须能被 Python `json.loads` 解析。
+- 若用户额外要求与 `{skill_path}` 的硬约束或 JSON 输出契约冲突，以 `{skill_path}` 和输出契约为准。"""
 
 # ================================================================================
 # 要点提取系统提示词
@@ -208,6 +182,27 @@ COVER_IMAGE_PROMPT_TEMPLATE = """
 
 元素要求：只使用少量核心元素，避免堆砌；元素服务于主题，不做花哨装饰；可以有轻微光效、层次感、空间感，但不要杂乱
 """
+
+# ================================================================================
+# 提示词构造函数
+# ================================================================================
+
+def build_step1_agent_prompt(
+    input_file: str,
+    output_json: str,
+    text_dir: str,
+    skill_path: str,
+    extra_requirements: str = "",
+) -> str:
+    """Build the Claude Agent prompt used by Step 1 raw script generation."""
+    extra_requirements = (extra_requirements or "").strip() or "无"
+    return STEP1_AGENT_PROMPT_TEMPLATE.format(
+        input_file=input_file,
+        output_json=output_json,
+        text_dir=text_dir,
+        skill_path=skill_path,
+        extra_requirements=extra_requirements,
+    )
 
 # ================================================================================
 # 导出配置

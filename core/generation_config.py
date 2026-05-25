@@ -45,6 +45,7 @@ class VideoGenerationConfig:
     
     # ==================== 内容生成参数 ====================
     num_segments: int = 6
+    extra_requirements: str = ""
     
     # ==================== LLM 配置 ====================
     llm_server_step2: str = ""

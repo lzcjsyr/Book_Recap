@@ -530,7 +530,13 @@ def _select_entry_and_context(project_root: str, output_dir: str):
                 print("👋 返回上一级")
                 continue
             run_mode = "auto" if mode.startswith("全自动") else "step"
-            return {"entry": "new", "input_file": input_file, "run_mode": run_mode}
+            extra_requirements = _prompt_step1_extra_requirements()
+            return {
+                "entry": "new",
+                "input_file": input_file,
+                "run_mode": run_mode,
+                "extra_requirements": extra_requirements,
+            }
 
         project_dir = interactive_project_selector(output_dir=os.path.join(project_root, "output"))
         if not project_dir:
@@ -550,6 +556,12 @@ def _select_entry_and_context(project_root: str, output_dir: str):
         step_val = selected_step
         
         return {"entry": "existing", "project_dir": project_dir, "selected_step": step_val, "image_method": progress.get('image_method')}
+
+
+def _prompt_step1_extra_requirements() -> str:
+    """Prompt for optional Step 1 requirements inserted into the agent prompt."""
+    print("\n请输入第一步额外要求（可选，直接回车跳过）")
+    return input("额外要求: ").strip()
 
 
 def _prompt_segment_generation_scope(
@@ -989,6 +1001,7 @@ def run_cli_main(
     cover_image_count: Optional[int] = _UNSET,
     run_mode: str = "auto",
     opening_quote: bool = _UNSET,
+    extra_requirements: str = _UNSET,
 ) -> Dict[str, Any]:
     """CLI主要业务逻辑入口"""
     
@@ -1034,6 +1047,7 @@ def run_cli_main(
             "cover_image_style": cover_image_style,
             "cover_image_count": cover_image_count,
             "opening_quote": opening_quote,
+            "extra_requirements": extra_requirements,
         }
         for key, value in overrides.items():
             if value is not _UNSET:
@@ -1138,6 +1152,7 @@ def run_cli_main(
         if selection["entry"] == "new":
             input_file = selection["input_file"]
             run_mode = selection["run_mode"]
+            params["extra_requirements"] = selection.get("extra_requirements", "")
         else:
             # 处理已有项目的步骤执行循环
             project_output_dir = selection["project_dir"]
@@ -1187,6 +1202,7 @@ def run_cli_main(
             input_file,
             output_dir,
             num_segments,
+            extra_requirements=params.get("extra_requirements", ""),
         )
         if not result.get("success"):
             print(f"\n❌ 步骤1失败: {result.get('message')}")
