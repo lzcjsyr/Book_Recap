@@ -1,6 +1,6 @@
 ---
 name: video-book-direct-read
-description: 用 Bash 按每窗不超过 23000 字符连续读取长书全文，建立覆盖台账并自检通过后，再生成中文视频号读书解说稿。
+description: 将长书、长文档或复杂报告转成中文视频号读书解说稿；先抽取文本（复杂表格 PDF 可用 MinerU）并建立可恢复覆盖台账，覆盖自检通过后再生成 3000 字以上初稿、多轮修订和最终 raw JSON。
 ---
 
 # 长资料直接大块读稿策略
@@ -15,7 +15,7 @@ description: 用 Bash 按每窗不超过 23000 字符连续读取长书全文，
 ## 使用顺序
 
 1. 先读 `references/reading-strategy.md`。若输入是投资、商业、研报类复杂表格 PDF，再读 `references/mineru-pdf-extraction.md`，先用 MinerU 抽取；否则按常规方式抽取文本。
-2. 抽取文本后，制定 Bash 读取计划（默认每窗 **不超过 23000 字符**）、用 `sed`/`awk` 连续读取 `{extract_path}`、建立并保存覆盖台账到 `{coverage_ledger_path}`。
+2. 抽取文本后，制定 Bash 读取计划（默认每窗 **不超过 23000 字符**），先创建 `{coverage_ledger_path}` 初始台账，再用 `sed`/`awk` 连续读取 `{extract_path}`，每读完一窗立即落盘更新台账。
 3. 覆盖检查通过后，再读 `references/writing-standard.md`：15 万字符以内必须全部读完；15-20 万字符至少覆盖 80%；超过 20 万字符至少覆盖 50%，且必须均匀覆盖全书并理解全书轮廓和核心思想。
 4. 读 `references/revision-workflow.md`，按要求保存每轮改写文件，再基于相邻版本的真实差异写修订审计。
 5. 输出前回看 `references/writing-standard.md` 的“最终 JSON 输出契约”，确保最终 JSON 可被 `json.loads` 解析。
@@ -23,8 +23,10 @@ description: 用 Bash 按每窗不超过 23000 字符连续读取长书全文，
 ## 运行原则
 
 - 先覆盖，再写稿。没有覆盖台账，不要进入初稿或最终 JSON。
+- 先建台账，再读正文；每个窗口读完必须立即更新 `_coverage_ledger.json`，不要等全部读完后一次性写。
 - 覆盖台账用于证明“读到了哪些区域”，不是普通摘要；写稿前你必须自己核对 `_coverage_ledger.json` 是否真实、完整。
 - 最终 JSON 前必须产生 `_draft_v1.txt`、`_draft_v2_faithfulness.txt`、`_draft_v3_structure.txt`、`_draft_v4_oral_style.txt`、`_draft_final.txt`、`_revision_audit.json`，且 audit 必须基于相邻版本差异。
+- `_draft_v1.txt` 第一稿必须达到 3000 字以上，后续修订都在足量初稿基础上进行。
 - 不要把局部段落误说成全书观点。
 - 正文只用 Bash 读，默认每窗不超过 23000 字符；截断时减半重读，不要改用 `Read` 或跳读抽样。
 - MinerU 只负责复杂 PDF 抽取，不代表阅读完成；MinerU 输出仍必须转成 `{extract_path}` 并走 Bash 字符窗口阅读和覆盖台账。

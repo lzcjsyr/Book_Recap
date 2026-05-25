@@ -14,12 +14,12 @@ STEP1_AGENT_PROMPT_TEMPLATE = """你在仓库根目录工作。
 执行顺序（必须按序，不可跳步）：
 1. 先读取 `{skill_path}` 和它指向的必要 references，先明确读取策略。
 2. 抽取原文到 `{extract_path}`（PDF/EPUB/MOBI/AZW3/DOCX/DOC 等先抽取；.md/.txt 复制或规范化到该路径；禁止直接 Read 大 PDF）。
-3. 按 `references/reading-strategy.md` 制定读取计划，**主要用 Bash**（`sed`/`awk`）按每窗 **不超过 23000 字符** 连续读取 `{extract_path}`，逐窗建立覆盖台账。
+3. 按 `references/reading-strategy.md` 制定读取计划，**先创建 `{coverage_ledger_path}` 初始台账**，再主要用 Bash（`sed`/`awk`）按每窗 **不超过 23000 字符** 连续读取 `{extract_path}`，每读完一窗立即落盘更新台账。
 4. 将覆盖台账保存到 `{coverage_ledger_path}`，按 skill 完成覆盖自检后再进入写稿：15 万字符以内必须全部读完；15-20 万字符至少覆盖 80%；超过 20 万字符至少覆盖 50%，且必须均匀覆盖全书并理解全书轮廓和核心思想；所有已读窗口必须 `complete`。
 5. 覆盖自检通过后，再读 `writing-standard.md` 与 `revision-workflow.md`，完成多轮修订落盘，最后生成 `{output_json}`。
 
 按 skill 的硬性顺序（不要提前写 raw JSON）：
-- 先完成 `{extract_path}` 抽取与 Bash 连续读取，再写 `{coverage_ledger_path}`。
+- 先完成 `{extract_path}` 抽取，再创建 `{coverage_ledger_path}` 初始台账；随后 Bash 连续读取正文，并逐窗落盘更新台账。
 - 覆盖自检未通过前，禁止写初稿、修订稿或 `{output_json}`。
 - 修订中间稿与 `_revision_audit.json` 落在 `{text_dir}`。
 
