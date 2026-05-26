@@ -21,7 +21,15 @@
 
 ## CLI 调用方式
 
-首次使用先确认 CLI 和 Token：
+首次使用先确认 CLI 和 Token。优先从项目根目录 `.env` 读取 `MINERU_API_TOKEN`，不要把真实 Token 写入 skill 文档或其他可提交文件：
+
+```bash
+set -a
+source .env
+set +a
+```
+
+然后检查 CLI 鉴权状态：
 
 ```bash
 mineru-open-api version
@@ -49,10 +57,11 @@ mineru-open-api flash-extract "$INPUT_FILE" -o "$TEXT_DIR/_mineru/"
 
 仅在项目已有 API 封装或需要服务端集成时使用。最小流程：
 
-1. `POST https://mineru.net/api/v4/extract/task`，`Authorization: Bearer <token>`，请求体包含 `url`、`model_version: "vlm"`、`enable_table: true`、`is_ocr: true`。
-2. 用返回的 `task_id` 轮询 `GET https://mineru.net/api/v4/extract/task/{task_id}`。
-3. `state == "done"` 后下载 `full_zip_url`，解压到 `$TEXT_DIR/_mineru/`。
-4. 记录 `_mineru_manifest.json`，再生成 `{extract_path}`。
+1. 从环境变量读取 `MINERU_API_TOKEN`，作为 Bearer Token。
+2. `POST https://mineru.net/api/v4/extract/task`，`Authorization: Bearer $MINERU_API_TOKEN`，请求体包含 `url`、`model_version: "vlm"`、`enable_table: true`、`is_ocr: true`。
+3. 用返回的 `task_id` 轮询 `GET https://mineru.net/api/v4/extract/task/{task_id}`。
+4. `state == "done"` 后下载 `full_zip_url`，解压到 `$TEXT_DIR/_mineru/`。
+5. 记录 `_mineru_manifest.json`，再生成 `{extract_path}`。
 
 ## 推荐落盘
 
