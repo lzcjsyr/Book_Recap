@@ -25,7 +25,7 @@ final_target_chars: 3300
 - 后续所有正文稿原则上不得低于 `draft_min_chars`。
 - 最终 raw JSON 的 `content` 目标长度按 `final_target_chars` 执行，`total_length` 写实际 `content` 字符数。
 
-## 主流程
+## 端到端流程
 
 不要一轮直接输出。按「理解 -> 定角度 -> 写初稿 -> 多轮修订 -> 包装输出」执行：
 
@@ -35,6 +35,17 @@ final_target_chars: 3300
 4. 初稿写作：读 `references/writing-standard.md`，生成达到 `draft_min_chars` 的 `_draft_v1.txt`。
 5. 多轮修订：读 `references/revision-workflow.md`，保存结构稿、终稿和修订审计。
 6. 包装输出：从 `_draft_final.txt` 生成标题、封面文案、金句、引导语和最终 raw JSON；除非用户要求展示过程，最终只输出项目可用的 raw JSON，并确保可被 `json.loads` 解析。
+
+## 运行原则
+
+- 先覆盖，再写稿。没有覆盖台账，不要进入初稿或最终 JSON。
+- 先建台账，再读正文；每个窗口读完必须立即更新 `_coverage_ledger.json`，不要等全部读完后一次性写。
+- 覆盖台账用于证明“读到了哪些区域”，不是普通摘要；写稿前你必须自己核对 `_coverage_ledger.json` 是否真实、完整。
+- 最终 JSON 前必须产生 `_draft_v1.txt`、`_draft_v2_structure.txt`、`_draft_final.txt`、`_revision_audit.json`，且 audit 必须基于相邻版本差异。
+- 不要把局部段落误说成全书观点。
+- 正文只用 Bash 读，默认每窗不超过 23000 字符；截断时减半重读，不要改用 `Read` 或跳读抽样。
+- MinerU 只负责复杂 PDF 抽取，不代表阅读完成；MinerU 输出仍必须转成 `{extract_path}` 并走 Bash 字符窗口阅读和覆盖台账。
+- 覆盖率按全文字符数分档：`source_total_chars <= 150000` 必须 100% 覆盖；`150000 < source_total_chars <= 200000` 必须覆盖至少 80%；`source_total_chars > 200000` 必须覆盖至少 50%，且不能只读前半部分或局部热点，必须均匀覆盖开头、中段、结尾和主要章节，形成对全书轮廓与核心思想的完整理解。
 
 ## 自检要求
 
