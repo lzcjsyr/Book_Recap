@@ -330,19 +330,14 @@ class Config:
     @classmethod
     def get_required_keys_for_config(cls, image_server: str, tts_server: str, *llm_key_names: str) -> List[str]:
         """根据服务配置返回所需的API密钥列表"""
-        required_keys = []
-        for key_name in llm_key_names:
-            if key_name and key_name not in required_keys:
-                required_keys.append(key_name)
+        required_keys = [k for k in llm_key_names if k]
+        
+        image_keys = {"doubao": "SEEDREAM_API_KEY", "siliconflow": "SILICONFLOW_KEY", "google": "GOOGLE_CLOUD_API_KEY"}
+        img_key = image_keys.get(image_server)
+        if img_key and img_key not in required_keys:
+            required_keys.append(img_key)
 
-        if image_server == "doubao":
-            required_keys.append("SEEDREAM_API_KEY")
-        elif image_server == "siliconflow" and "SILICONFLOW_KEY" not in required_keys:
-            required_keys.append("SILICONFLOW_KEY")
-        elif image_server == "google":
-            required_keys.append("GOOGLE_CLOUD_API_KEY")
-
-        if tts_server == "bytedance":
+        if tts_server == "bytedance" and "BYTEDANCE_TTS_API_KEY" not in required_keys:
             required_keys.append("BYTEDANCE_TTS_API_KEY")
         return required_keys
 
@@ -440,37 +435,24 @@ class Config:
                 f"腾讯混元图像支持: 宽高范围 512-2048，面积不超过 1024x1024"
             )
 
+    # 统一管理 OpenAI SDK 格式的 Base URL 映射
+    LLM_SERVER_URLS = {
+        "siliconflow": "https://api.siliconflow.cn/v1",
+        "openrouter": "https://openrouter.ai/api/v1",
+        "mimo": "https://token-plan-sgp.xiaomimimo.com/anthropic",
+        "volcengine": "https://ark.cn-beijing.volces.com/api/v3",
+        "deepseek": "https://api.deepseek.com/v1",
+    }
+
     @property
     def LLM_BASE_URL_STEP2(self) -> str:
         """根据 LLM_SERVER_STEP2 自动匹配 base URL"""
-        server = (getattr(self, "LLM_SERVER_STEP2", "") or "").strip().lower()
-        if server == "siliconflow":
-            return "https://api.siliconflow.cn/v1"
-        elif server == "openrouter":
-            return "https://openrouter.ai/api/v1"
-        elif server == "mimo":
-            return "https://token-plan-sgp.xiaomimimo.com/anthropic"
-        elif server == "volcengine":
-            return "https://ark.cn-beijing.volces.com/api/v3"
-        elif server == "deepseek":
-            return "https://api.deepseek.com/v1"
-        return ""
+        return self.LLM_SERVER_URLS.get((getattr(self, "LLM_SERVER_STEP2", "") or "").strip().lower(), "")
 
     @property
     def LLM_BASE_URL_STEP3(self) -> str:
         """根据 LLM_SERVER_STEP3 自动匹配 base URL"""
-        server = (getattr(self, "LLM_SERVER_STEP3", "") or "").strip().lower()
-        if server == "siliconflow":
-            return "https://api.siliconflow.cn/v1"
-        elif server == "openrouter":
-            return "https://openrouter.ai/api/v1"
-        elif server == "mimo":
-            return "https://token-plan-sgp.xiaomimimo.com/anthropic"
-        elif server == "volcengine":
-            return "https://ark.cn-beijing.volces.com/api/v3"
-        elif server == "deepseek":
-            return "https://api.deepseek.com/v1"
-        return ""
+        return self.LLM_SERVER_URLS.get((getattr(self, "LLM_SERVER_STEP3", "") or "").strip().lower(), "")
 
 
 # 将用户配置区的模块常量挂到 Config，避免在类体内逐字段复制
