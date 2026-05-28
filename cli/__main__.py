@@ -10,6 +10,7 @@ if __name__ == "__main__":
     print("🚀 智能视频制作系统启动 (CLI)")
     
     # 设置项目路径
+    import argparse
     import os
     import sys
     import shutil
@@ -33,13 +34,22 @@ if __name__ == "__main__":
 
     try:
         ensure_env_file(project_root)
-        from core.config import get_generation_params
+        parser = argparse.ArgumentParser(description="智能视频制作系统")
+        parser.add_argument("--config", help="YAML配置文件路径，默认读取项目根目录 config.yaml")
+        args = parser.parse_args()
+
+        from core.config import apply_yaml_config, find_yaml_config, get_generation_params
         from cli.ui_helpers import run_cli_main, setup_cli_logging
 
         # 初始化 CLI 日志，使后续模块共享统一配置
         setup_cli_logging()
 
-        result = run_cli_main(**get_generation_params())
+        config_path = args.config or find_yaml_config(project_root)
+        if config_path:
+            apply_yaml_config(config_path)
+            print(f"已加载配置文件: {config_path}")
+
+        result = run_cli_main(**get_generation_params(config_path))
         
         # 处理结果
         if result.get("success"):

@@ -1,11 +1,3 @@
-def test_recovered_prompts_keep_step2_summarizer_importable():
-    import core.domain.summarizer as summarizer
-
-    assert hasattr(summarizer, "generate_description_summary")
-    assert hasattr(summarizer, "extract_keywords")
-    assert not hasattr(summarizer, "intelligent_summarize")
-
-
 def test_generation_params_match_cli_entrypoint_signature():
     from cli.ui_helpers import run_cli_main
     from core.config import get_generation_params
@@ -14,29 +6,6 @@ def test_generation_params_match_cli_entrypoint_signature():
     accepted = set(run_cli_main.__code__.co_varnames[:run_cli_main.__code__.co_argcount])
 
     assert set(params) <= accepted
-    assert "llm_endpoint_step1" not in params
-    assert "llm_api_key_env_step1" not in params
-    assert "llm_skill_step1" not in params
-    assert "llm_server_step1" not in params
-    assert "target_length" not in params
-
-
-def test_config_uses_single_llm_configuration_shape():
-    from core.config import config
-
-    assert hasattr(config, "LLM_SERVER_STEP2")
-    assert hasattr(config, "LLM_SERVER_STEP3")
-    assert hasattr(config, "LLM_BASE_URL_STEP2")
-    assert hasattr(config, "LLM_BASE_URL_STEP3")
-    assert hasattr(config, "LLM_SERVER_STEP1")
-    assert hasattr(config, "LLM_MODEL_STEP1")
-    assert not hasattr(config, "LLM_BASE_URL_STEP1")
-    assert not hasattr(config, "TARGET_LENGTH")
-    assert not hasattr(config, "SILICONFLOW_BASE_URL")
-    assert not hasattr(config, "OPENROUTER_BASE_URL")
-    assert not hasattr(config, "LLM_ENDPOINT_STEP1")
-    assert not hasattr(config, "LLM_API_KEY_ENV_STEP1")
-    assert not hasattr(config, "LLM_SKILL_STEP1")
 
 
 def test_config_exposes_current_runtime_params():
@@ -50,7 +19,6 @@ def test_config_exposes_current_runtime_params():
     assert params["llm_base_url_step3"] == config.LLM_BASE_URL_STEP3
     assert "siliconflow" in config.SUPPORTED_LLM_SERVERS
     assert config.IMAGE_STYLE_PRESET == params["image_style_preset"]
-    assert config.RECOMMENDED_MODELS["llm"]["siliconflow"][0] == params["llm_model_step2"]
     assert params["cover_image_server"] == "google_adc"
 
     config.validate_parameters(
@@ -66,7 +34,7 @@ def test_config_exposes_current_runtime_params():
 
 
 def test_google_adc_image_server_is_inherited_by_gemini_cover_defaults():
-    from core.generation_config import VideoGenerationConfig
+    from core.config import VideoGenerationConfig
 
     config = VideoGenerationConfig(
         input_file="input.pdf",

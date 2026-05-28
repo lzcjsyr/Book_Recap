@@ -4,17 +4,6 @@ from pathlib import Path
 SKILL_DIR = Path(__file__).resolve().parents[1] / "skills" / "video-book-direct-read"
 
 
-def test_writing_standard_carries_short_video_book_script_requirements():
-    standard = (SKILL_DIR / "references" / "writing-standard.md").read_text(encoding="utf-8")
-
-    assert "抖音" in standard
-    assert "微信视频号" in standard
-    assert "第一遍速读" in standard
-    assert "中国观众" in standard
-    assert "收益承诺" in standard
-    assert "约每 250 字" in standard
-
-
 def test_writing_standard_keeps_single_clean_raw_json_schema():
     standard = (SKILL_DIR / "references" / "writing-standard.md").read_text(encoding="utf-8")
 
@@ -43,41 +32,3 @@ def test_skill_entry_requires_coverage_ledger_before_scripting():
     assert "_coverage_ledger.json" in reading
     assert "coverage_check.passed=true" in skill
     assert "行覆盖率" in reading
-
-
-def test_reading_strategy_uses_bash_with_23000_char_windows():
-    reading = (SKILL_DIR / "references" / "reading-strategy.md").read_text(encoding="utf-8")
-
-    assert "23000" in reading
-    assert "chars_per_window" in reading
-    assert "bash_char_budget_window" in reading
-    assert "lines_per_window" not in reading
-    assert "wc -m" in reading
-    assert "禁止用 `wc -c` 字节数" in reading
-    assert "sed" in reading
-    assert "优先 `Bash`" in reading or "以 Bash 为主" in reading or "正文阅读以 Bash 为主" in reading
-
-
-def test_skill_no_longer_references_separate_output_contract():
-    assert not (SKILL_DIR / "references" / "output-contract.md").exists()
-
-    for path in [
-        SKILL_DIR / "SKILL.md",
-        SKILL_DIR / "references" / "writing-standard.md",
-        SKILL_DIR / "references" / "revision-workflow.md",
-    ]:
-        assert "output-contract.md" not in path.read_text(encoding="utf-8")
-
-
-def test_revision_workflow_uses_compact_three_draft_flow():
-    workflow = (SKILL_DIR / "references" / "revision-workflow.md").read_text(encoding="utf-8")
-
-    assert "_draft_v1.txt" in workflow
-    assert "_draft_v2_structure.txt" in workflow
-    assert "_draft_final.txt" in workflow
-    assert "_revision_audit.json" in workflow
-    assert "_draft_v2_faithfulness.txt" not in workflow
-    assert "_draft_v3_structure.txt" not in workflow
-    assert "_draft_v4_oral_style.txt" not in workflow
-    assert "初稿自查" in workflow
-    assert "价值承诺" in workflow

@@ -28,7 +28,7 @@ from core.pipeline.steps import (
 )
 from core.config import Config, config as global_config
 from core.domain.composer import VideoComposer
-from core.generation_config import VideoGenerationConfig
+from core.config import VideoGenerationConfig
 from core.infra.project_paths import ProjectPaths
 from core.shared import load_json_file, logger
 

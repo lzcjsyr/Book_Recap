@@ -37,7 +37,7 @@ fi
 
 (
   cd "$REMOTION_DIR"
-  npm install --no-fund --no-audit
+  npm ci --no-fund --no-audit
 )
 
 "$PYTHON_EXE" -m core.dependency_check --repo-root "$REPO_ROOT"

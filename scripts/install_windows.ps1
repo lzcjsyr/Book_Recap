@@ -38,7 +38,7 @@ if (-not (Test-Path (Join-Path $RepoRoot ".env")) -and (Test-Path (Join-Path $Re
 
 if (-not $SkipRemotionInstall) {
     Push-Location $RemotionDir
-    npm install --no-fund --no-audit
+    npm ci --no-fund --no-audit
     Pop-Location
 }
 

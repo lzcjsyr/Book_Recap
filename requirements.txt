@@ -2,6 +2,7 @@
 openai>=1.100.0
 requests>=2.32.0
 python-dotenv>=1.0.0
+PyYAML>=6.0.0
 
 # Image processing
 Pillow>=11.3.0

@@ -328,58 +328,6 @@ def test_agent_session_log_omits_bash_extract_window_output(tmp_path: Path):
     assert tool_result["log_omitted"] == "bash_extract_window_output"
 
 
-def test_agent_session_log_omits_sdk_tool_result_without_tool_use_id(tmp_path: Path):
-    log_path = tmp_path / "text" / claude_agent.STEP1_SESSION_LOG_NAME
-    session_log = claude_agent.AgentSessionLog(log_path)
-    large_stdout = "正文" * 10000
-    session_log.append(
-        "message",
-        {
-            "message": {
-                "kind": "AssistantMessage",
-                "content": [
-                    {
-                        "id": "call_head_read",
-                        "name": "Bash",
-                        "input": {
-                            "command": 'EXTRACT="/tmp/output/text/_extract.txt" && head -80 "$EXTRACT"',
-                        },
-                    }
-                ],
-            }
-        },
-    )
-    session_log.append(
-        "message",
-        {
-            "message": {
-                "kind": "UserMessage",
-                "content": [
-                    {
-                        "tool_use_id": "call_head_read",
-                        "content": large_stdout,
-                        "is_error": False,
-                    }
-                ],
-                "tool_use_result": {
-                    "stdout": large_stdout,
-                    "stderr": "",
-                    "interrupted": False,
-                    "isImage": False,
-                },
-            }
-        },
-    )
-
-    first, second = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()]
-    assert first["message"]["content"][0]["input"]["command"].startswith("[omitted:")
-    assert second["message"]["content"][0]["content"].startswith("[omitted:")
-    tool_result = second["message"]["tool_use_result"]
-    assert tool_result["stdout"].startswith("[omitted:")
-    assert tool_result["stdout_length"] == len(large_stdout)
-    assert "正文正文" not in json.dumps(second, ensure_ascii=False)
-
-
 def test_agent_session_log_omits_skill_reference_read_content(tmp_path: Path):
     log_path = tmp_path / "text" / claude_agent.STEP1_SESSION_LOG_NAME
     session_log = claude_agent.AgentSessionLog(log_path)

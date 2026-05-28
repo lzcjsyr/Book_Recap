@@ -1173,7 +1173,7 @@ def run_cli_main(
         input_file = os.path.join(project_root, input_file)
 
     if run_mode == "auto":
-        from core.generation_config import VideoGenerationConfig
+        from core.config import VideoGenerationConfig
 
         gen_config = VideoGenerationConfig.from_cli_params(
             params,

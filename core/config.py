@@ -1,229 +1,234 @@
-# ████████████████████████████████████████████████████████████████████████████████
-# ██                  用户配置参数区域(参数按7步工作流程组织，清晰对应各步骤)            ██
-# ████████████████████████████████████████████████████████████████████████████████
+"""Configuration loading, validation, and runtime parameter objects.
 
-# ════════════════════════════════════════════════════════════════════════════════
-# ⚙️  全局配置
-# ════════════════════════════════════════════════════════════════════════════════
-OPENING_QUOTE = True                                 # 是否启用开场金句（影响步骤3、4、5）
-
-# ════════════════════════════════════════════════════════════════════════════════
-# 📝 步骤1：Claude Agent SDK - 原始文稿写作（兼容 Anthropic API 格式的网关）
-# ════════════════════════════════════════════════════════════════════════════════
-# 步骤1 LLM供应商，可选: mimo, deepseek, siliconflow, openrouter, volcengine (适配 Anthropic SDK 格式)
-LLM_SERVER_STEP1 = "mimo"                               
-LLM_MODEL_STEP1 = "mimo-v2.5-pro"                        # 填写完整模型名称，按网关要求原样传递
-STEP1_AGENT_SKILL = "video-book-direct-read"             # 步骤1使用的 Claude Code skill
-
-# ════════════════════════════════════════════════════════════════════════════════
-# ✂️  步骤1.5：脚本分段 - 段落切分
-# ════════════════════════════════════════════════════════════════════════════════
-NUM_SEGMENTS = 75                                       # 视频分段数量 (5-100)
-
-# ════════════════════════════════════════════════════════════════════════════════
-# 🔍 步骤2：要点提取 - 视觉关键词
-# ════════════════════════════════════════════════════════════════════════════════
-# 步骤2 LLM供应商，可选: mimo, deepseek, siliconflow, openrouter, volcengine (基于 OpenAI SDK 格式适配)
-LLM_SERVER_STEP2 = "siliconflow"                        
-LLM_MODEL_STEP2 = "Pro/moonshotai/Kimi-K2.6"            # 步骤2模型（要点提取）
-IMAGES_METHOD = "description"                           # 配图生成方式: keywords / description
-LLM_TEMPERATURE_KEYWORDS = 0.5                          # 提取随机性 (0-1，越大越随机)
-# keywords模式: 为每段提取视觉关键词和氛围词
-# description模式: 生成内容整体描述，适合连贯性更强的配图
-
-# ════════════════════════════════════════════════════════════════════════════════
-# 🎨 步骤3：视觉素材生成 - Remotion开场视频 + AI配图
-# ════════════════════════════════════════════════════════════════════════════════
-IMAGE_SERVER = "google"                                # 供应商: doubao / siliconflow / google / google_adc
-IMAGE_SIZE = "2560x1440"                               # 图像尺寸 (16:9 横屏)
-IMAGE_MODEL = "gemini-3.1-flash-image-preview"         # 模型：gemini-3.1-flash-image-preview,doubao-seedream-5-0-260128
-IMAGE_STYLE_PRESET = "style02"                         # 段落图像风格预设 (详见 prompts.py)
-MAX_CONCURRENT_IMAGE_GENERATION = 1                    # 图像生成最大并发数
-
-# 步骤3提示词脱敏 LLM供应商，可选: mimo, deepseek, siliconflow, openrouter, volcengine (基于 OpenAI SDK 格式适配)
-LLM_SERVER_STEP3 = "siliconflow"                        
-LLM_MODEL_STEP3 = "Pro/moonshotai/Kimi-K2.6"            # 步骤3提示词脱敏模型
-
-# --- Remotion 开场视频配置（以下参数会直接影响 opening.mp4 的真实效果） ---
-OPENING_REMOTION_IP_NAME = "Cody叩底"                   # 左上刊头文案
-OPENING_REMOTION_DURATION_SECONDS = 5.0                # 开场视频时长（秒）
-OPENING_REMOTION_FPS = 30                              # 开场视频帧率（fps）
-OPENING_REMOTION_FIRST_LINE_SECONDS = 0.2              # 第一行金句出现时间（秒）
-OPENING_REMOTION_LAST_LINE_SECONDS = 1.0               # 最后一行金句出现时间（秒）
-OPENING_REMOTION_MAX_LINES = 4                         # 金句最大行数（也会影响断句）
-OPENING_REMOTION_MAX_CHARS_PER_LINE = 20               # 每行最大字符数（也会影响断句）
-
-# 图像模型尺寸规则：
-# - doubao-seedream-4-0-250828: 支持 [1280x720, 4096x4096] 范围内任意尺寸
-# - Qwen/Qwen-Image: 仅支持固定尺寸 (如 1664x928, 1328x1328, 928x1664, 1472x1140, 1140x1472 等)
-# - gemini-3.1-flash-image-preview: 由Google模型自动决定输出尺寸（保留 IMAGE_SIZE 作为流程参数）
-
-# ════════════════════════════════════════════════════════════════════════════════
-# 🎙️  步骤4：语音合成 - TTS配音
-# ════════════════════════════════════════════════════════════════════════════════
-VOICE = ""                                             # 语音音色（建议通过 .env 的 BYTEDANCE_TTS_VOICE_ID 配置）
-RESOURCE_ID = "seed-icl-2.0"                           # TTS资源ID: seed-tts-1.0, seed-tts-2.0, seed-icl-1.0, seed-icl-2.0
-TTS_MODEL = "seed-tts-2.0-standard"                  # 声音复刻2.0模型效果: seed-tts-2.0-expressive / seed-tts-2.0-standard
-
-# 音频参数配置
-TTS_EMOTION = "neutral"                                # 情感: neutral(中性), happy(高兴), sad(悲伤)等
-TTS_EMOTION_SCALE = 4                                  # 情感强度 (1-5, 默认4)
-TTS_SPEECH_RATE = 20                                   # 语速 (-50到100, 0=正常, 100=2倍速, -50=0.5倍速, 默认0)
-TTS_LOUDNESS_RATE = 0                                  # 音量 (-50到100, 0=正常, 100=2倍音量, -50=0.5倍音量, 默认0)
-
-MUTE_CUT_THRESHOLD = 400                               # 静音判定阈值 (建议200-800, 0=禁用)
-MUTE_CUT_MIN_SILENCE_MS = 300                          # 最小静音长度 (毫秒, 只切除长于此值的静音, 建议100-500)
-MUTE_CUT_REMAIN_MS = 200                               # 静音切除后保留时长 (毫秒, 建议50-150)
-
-MAX_CONCURRENT_VOICE_SYNTHESIS = 5                     # 语音合成最大并发数
-
-# seed-tts-1.0: zh_male_yuanboxiaoshu_moon_bigtts(男-书香), zh_female_wenrouxiaoya_moon_bigtts(女-文雅)
-# seed-tts-2.0：zh_male_ruyayichen_saturn_bigtts, zh_female_santongyongns_saturn_bigtts
-# seed-icl-2.0：S_QKj17k802
-
-# ════════════════════════════════════════════════════════════════════════════════
-# 🎬 步骤5：视频合成 - 最终导出
-# ════════════════════════════════════════════════════════════════════════════════
-
-# --- 基础设置 ---
-VIDEO_SIZE = "1280x720"                                # 视频导出尺寸 (可与 IMAGE_SIZE 不同)
-VIDEO_OUTPUT_FPS = 30                                  # 视频导出帧率（步骤5最终成片）
-VIDEO_CODEC = "hevc"                                   # 视频编码: h264(兼容性好), hevc(H.265, M1效率高, 体积小)
-VIDEO_BITRATE_MODE = "quality"                         # 码率模式: auto(固定码率), quality(质量优先VBR)
-VIDEO_QUALITY_LEVEL = 70                               # 质量系数 (0-100, 仅quality模式有效, 推荐60-75)
-ENABLE_SUBTITLES = True                                # 是否启用字幕
-DEFAULT_BGM_FILENAME = "The Sound of Slience.mp3"      # 默认背景音乐（music/ 下，None=无音乐）
-
-# --- 音频控制 ---
-BGM_DEFAULT_VOLUME = 0.1                               # 背景音乐音量 (0=静音, 1=原音, >1放大, 推荐0.03-0.20)
-NARRATION_DEFAULT_VOLUME = 2.0                         # 口播音量 (0.5-3.0, 推荐0.8-1.5, >2.0有削波风险)
-NARRATION_SPEED_FACTOR = 1.05                           # 口播变速系数 (1.0=原速)
-
-# BGM响度标准化（解决音量起伏过大问题）
-BGM_NORMALIZE_LOUDNESS = True                          # 是否启用BGM响度标准化（推荐开启）
-BGM_TARGET_LOUDNESS = 15.0                             # 目标响度（均值）：数值越小越响，建议范围 16-23
-BGM_LOUDNESS_RANGE = 6.5                               # 响度范围（标准差）：数值越小越平，建议范围 5-10
-
-# 音频闪避（口播时自动降低BGM音量）
-AUDIO_DUCKING_ENABLED = False                          # 是否启用音频闪避
-AUDIO_DUCKING_STRENGTH = 0.5                           # BGM压低强度 (0-1)
-AUDIO_DUCKING_SMOOTH_SECONDS = 0.12                    # 音量过渡平滑时间 (秒)
-
-# --- 视觉效果时间控制 ---
-OPENING_FADEIN_SECONDS = 1.0                           # 开场渐显时长 (秒)
-ENDING_FADE_SECONDS = 2.0                              # 片尾淡出时长 (秒)
-
-# --- 视频过渡效果 ---
-ENABLE_TRANSITIONS = False                              # 是否启用视频过渡效果（默认关闭，确保向后兼容）
-TRANSITION_DURATION = 0.8                               # 过渡时长 (秒, 建议0.3-1.5)
-TRANSITION_STYLE = "slide_right"                        
-# 过渡样式: crossfade(交叉淡化), fade_white(白场), fade_black(黑场), wipe_left(左擦除), wipe_right(右擦除),
-# slide_left(左滑动), slide_right(右滑动), zoom_in(放大), zoom_out(缩小)
-
-# --- 字幕样式配置 ---
-# 字体路径建议：可填字体文件绝对路径；也可填 "auto" 让程序按系统自动选择常见中文字体。
-# 如果填写的路径不存在，程序会自动回退到 "auto"。
-# macOS 苹方字体: /System/Library/Fonts/PingFang.ttc
-# macOS 宋体: /System/Library/Fonts/Supplemental/Songti.ttc
-# Windows 微软雅黑: C:/Windows/Fonts/msyh.ttc
-SUBTITLE_FONT_SIZE = 48                                # 字幕字体大小
-SUBTITLE_FONT_FAMILY = "/System/Library/AssetsV2/com_apple_MobileAsset_Font8/86ba2c91f017a3749571a82f2c6d890ac7ffb2fb.asset/AssetData/PingFang.ttc"  # 字幕字体路径 (PingFang SC)
-SUBTITLE_FONT_TTC_INDEX = 11                           # TTC字体索引 (11=PingFang SC Semibold)
-SUBTITLE_COLOR = "white"                               # 字幕文字颜色
-SUBTITLE_STROKE_COLOR = "black"                        # 字幕描边颜色
-SUBTITLE_STROKE_WIDTH = 6                              # 字幕描边粗细
-SUBTITLE_POSITION = ("center", "bottom")               # 字幕位置 (水平, 垂直)
-SUBTITLE_MARGIN_BOTTOM = 60                            # 字幕距底部距离 (像素)
-SUBTITLE_MAX_CHARS_PER_LINE = 20                       # 字幕每行最大字符数
-SUBTITLE_MAX_LINES = 1                                 # 字幕最大行数
-SUBTITLE_LINE_SPACING = 15                             # 字幕行间距 (像素)
-SUBTITLE_LETTER_SPACING = 2                            # 字幕字间距 (像素, 0=正常)
-SUBTITLE_BACKGROUND_COLOR = (0, 0, 0)                  # 字幕背景色 (RGB, None=透明)
-SUBTITLE_BACKGROUND_OPACITY = 0.0                      # 字幕背景不透明度 (0-1)
-SUBTITLE_BACKGROUND_H_PADDING = 20                     # 字幕背景水平内边距 (像素)
-SUBTITLE_BACKGROUND_V_PADDING = 10                     # 字幕背景垂直内边距 (像素)
-SUBTITLE_SHADOW_ENABLED = True                         # 是否启用字幕阴影
-SUBTITLE_SHADOW_COLOR = "black"                        # 字幕阴影颜色
-SUBTITLE_SHADOW_OFFSET = (0, 0)                        # 字幕阴影偏移 (x, y)
-
-# --- 素材处理配置 ---
-IMAGE_MATERIAL_TARGET_FPS = 15                         # 纯图片素材时的帧率
-VIDEO_MATERIAL_REMOVE_AUDIO = True                     # 是否移除原视频素材中的音频
-VIDEO_MATERIAL_LONGER_THAN_AUDIO_MODE = "crop"         # 长视频对齐方式: crop(截取前段)/compress(均匀压缩到音频时长)
-VIDEO_MATERIAL_DURATION_ADJUST = "stretch"             # 兼容旧版配置：stretch≈compress, crop=裁剪（推荐改用 VIDEO_MATERIAL_LONGER_THAN_AUDIO_MODE）
-VIDEO_MATERIAL_RESIZE_METHOD = "crop"                  # 视频尺寸调整方式: crop/stretch
-
-# ════════════════════════════════════════════════════════════════════════════════
-# 🖼️  步骤6：封面生成 - 宣传素材
-# ════════════════════════════════════════════════════════════════════════════════
-
-# 封面尺寸预设（运行步骤6时可选择）
-COVER_IMAGE_SIZE_PRESETS = {
-    "16:9": "3200x1800",   # 横屏
-    "9:16": "1800x3200",   # 竖屏
-    "4:3": "3000x2250",    # 传统横屏
-    "3:4": "2250x3000",    # 传统竖屏
-    "1:1": "2500x2500",    # 方形
-}
-DEFAULT_COVER_IMAGE_SIZE_KEY = "1:1"                   # 默认封面尺寸比例
-
-COVER_IMAGE_MODEL = "gemini-3.1-flash-image-preview"   # 封面图像生成模型
-COVER_IMAGE_SERVER = "google_adc"                       # 封面图像生成供应商: google_adc=本机ADC/Vertex AI，google=GOOGLE_CLOUD_API_KEY
-COVER_IMAGE_STYLE = "cover06"                          # 封面风格预设 (详见 prompts.py)
-COVER_IMAGE_COUNT = 1                                  # 封面生成数量
-
-
-# ████████████████████████████████████████████████████████████████████████████████
-# ██                          系统内部配置（勿动）                                ██
-# ████████████████████████████████████████████████████████████████████████████████
+User-facing settings live in config.yaml. This module keeps compatibility with
+legacy imports such as `from core.config import config` while using
+config.example.yaml as the built-in defaults.
+"""
 
 import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Mapping
 from dotenv import load_dotenv
+import yaml
 
 # 加载环境变量
 load_dotenv()
 
-# 允许通过 .env 覆盖声音复刻音色ID，避免遗漏在代码配置中
-VOICE = os.getenv("BYTEDANCE_TTS_VOICE_ID", VOICE).strip() or VOICE
+
+_YAML_SCHEMA: Dict[str, Dict[str, str]] = {
+    "global": {"opening_quote": "OPENING_QUOTE"},
+    "step1": {
+        "llm_server": "LLM_SERVER_STEP1",
+        "llm_model": "LLM_MODEL_STEP1",
+        "agent_skill": "STEP1_AGENT_SKILL",
+    },
+    "step1_5": {"num_segments": "NUM_SEGMENTS"},
+    "step2": {
+        "llm_server": "LLM_SERVER_STEP2",
+        "llm_model": "LLM_MODEL_STEP2",
+        "images_method": "IMAGES_METHOD",
+        "llm_temperature_keywords": "LLM_TEMPERATURE_KEYWORDS",
+    },
+    "step3": {
+        "image_server": "IMAGE_SERVER",
+        "image_size": "IMAGE_SIZE",
+        "image_model": "IMAGE_MODEL",
+        "image_style_preset": "IMAGE_STYLE_PRESET",
+        "max_concurrent_image_generation": "MAX_CONCURRENT_IMAGE_GENERATION",
+        "llm_server": "LLM_SERVER_STEP3",
+        "llm_model": "LLM_MODEL_STEP3",
+    },
+    "remotion_opening": {
+        "ip_name": "OPENING_REMOTION_IP_NAME",
+        "duration_seconds": "OPENING_REMOTION_DURATION_SECONDS",
+        "fps": "OPENING_REMOTION_FPS",
+        "first_line_seconds": "OPENING_REMOTION_FIRST_LINE_SECONDS",
+        "last_line_seconds": "OPENING_REMOTION_LAST_LINE_SECONDS",
+        "max_lines": "OPENING_REMOTION_MAX_LINES",
+        "max_chars_per_line": "OPENING_REMOTION_MAX_CHARS_PER_LINE",
+    },
+    "step4": {
+        "voice": "VOICE",
+        "resource_id": "RESOURCE_ID",
+        "tts_model": "TTS_MODEL",
+        "emotion": "TTS_EMOTION",
+        "emotion_scale": "TTS_EMOTION_SCALE",
+        "speech_rate": "TTS_SPEECH_RATE",
+        "loudness_rate": "TTS_LOUDNESS_RATE",
+        "mute_cut_threshold": "MUTE_CUT_THRESHOLD",
+        "mute_cut_min_silence_ms": "MUTE_CUT_MIN_SILENCE_MS",
+        "mute_cut_remain_ms": "MUTE_CUT_REMAIN_MS",
+        "max_concurrent_voice_synthesis": "MAX_CONCURRENT_VOICE_SYNTHESIS",
+    },
+    "step5": {
+        "video_size": "VIDEO_SIZE",
+        "video_output_fps": "VIDEO_OUTPUT_FPS",
+        "video_codec": "VIDEO_CODEC",
+        "video_bitrate_mode": "VIDEO_BITRATE_MODE",
+        "video_quality_level": "VIDEO_QUALITY_LEVEL",
+        "enable_subtitles": "ENABLE_SUBTITLES",
+        "bgm_filename": "DEFAULT_BGM_FILENAME",
+        "bgm_default_volume": "BGM_DEFAULT_VOLUME",
+        "narration_default_volume": "NARRATION_DEFAULT_VOLUME",
+        "narration_speed_factor": "NARRATION_SPEED_FACTOR",
+        "bgm_normalize_loudness": "BGM_NORMALIZE_LOUDNESS",
+        "bgm_target_loudness": "BGM_TARGET_LOUDNESS",
+        "bgm_loudness_range": "BGM_LOUDNESS_RANGE",
+        "audio_ducking_enabled": "AUDIO_DUCKING_ENABLED",
+        "audio_ducking_strength": "AUDIO_DUCKING_STRENGTH",
+        "audio_ducking_smooth_seconds": "AUDIO_DUCKING_SMOOTH_SECONDS",
+        "opening_fadein_seconds": "OPENING_FADEIN_SECONDS",
+        "ending_fade_seconds": "ENDING_FADE_SECONDS",
+        "enable_transitions": "ENABLE_TRANSITIONS",
+        "transition_duration": "TRANSITION_DURATION",
+        "transition_style": "TRANSITION_STYLE",
+        "image_material_target_fps": "IMAGE_MATERIAL_TARGET_FPS",
+        "video_material_remove_audio": "VIDEO_MATERIAL_REMOVE_AUDIO",
+        "video_material_longer_than_audio_mode": "VIDEO_MATERIAL_LONGER_THAN_AUDIO_MODE",
+        "video_material_duration_adjust": "VIDEO_MATERIAL_DURATION_ADJUST",
+        "video_material_resize_method": "VIDEO_MATERIAL_RESIZE_METHOD",
+    },
+    "subtitles": {
+        "font_size": "SUBTITLE_FONT_SIZE",
+        "font_family": "SUBTITLE_FONT_FAMILY",
+        "font_ttc_index": "SUBTITLE_FONT_TTC_INDEX",
+        "color": "SUBTITLE_COLOR",
+        "stroke_color": "SUBTITLE_STROKE_COLOR",
+        "stroke_width": "SUBTITLE_STROKE_WIDTH",
+        "position": "SUBTITLE_POSITION",
+        "margin_bottom": "SUBTITLE_MARGIN_BOTTOM",
+        "max_chars_per_line": "SUBTITLE_MAX_CHARS_PER_LINE",
+        "max_lines": "SUBTITLE_MAX_LINES",
+        "line_spacing": "SUBTITLE_LINE_SPACING",
+        "letter_spacing": "SUBTITLE_LETTER_SPACING",
+        "background_color": "SUBTITLE_BACKGROUND_COLOR",
+        "background_opacity": "SUBTITLE_BACKGROUND_OPACITY",
+        "background_h_padding": "SUBTITLE_BACKGROUND_H_PADDING",
+        "background_v_padding": "SUBTITLE_BACKGROUND_V_PADDING",
+        "shadow_enabled": "SUBTITLE_SHADOW_ENABLED",
+        "shadow_color": "SUBTITLE_SHADOW_COLOR",
+        "shadow_offset": "SUBTITLE_SHADOW_OFFSET",
+    },
+    "step6": {
+        "cover_image_size_presets": "COVER_IMAGE_SIZE_PRESETS",
+        "default_cover_image_size_key": "DEFAULT_COVER_IMAGE_SIZE_KEY",
+        "cover_image_model": "COVER_IMAGE_MODEL",
+        "cover_image_server": "COVER_IMAGE_SERVER",
+        "cover_image_style": "COVER_IMAGE_STYLE",
+        "cover_image_count": "COVER_IMAGE_COUNT",
+    },
+}
+
+_PARAM_CONSTANTS = {
+    "num_segments": "NUM_SEGMENTS",
+    "image_size": "IMAGE_SIZE",
+    "video_size": "VIDEO_SIZE",
+    "llm_model_step2": "LLM_MODEL_STEP2",
+    "llm_server_step2": "LLM_SERVER_STEP2",
+    "image_server": "IMAGE_SERVER",
+    "image_model": "IMAGE_MODEL",
+    "llm_server_step3": "LLM_SERVER_STEP3",
+    "llm_model_step3": "LLM_MODEL_STEP3",
+    "voice": "VOICE",
+    "resource_id": "RESOURCE_ID",
+    "tts_model": "TTS_MODEL",
+    "tts_emotion": "TTS_EMOTION",
+    "tts_emotion_scale": "TTS_EMOTION_SCALE",
+    "tts_speech_rate": "TTS_SPEECH_RATE",
+    "tts_loudness_rate": "TTS_LOUDNESS_RATE",
+    "mute_cut_threshold": "MUTE_CUT_THRESHOLD",
+    "mute_cut_min_silence_ms": "MUTE_CUT_MIN_SILENCE_MS",
+    "mute_cut_remain_ms": "MUTE_CUT_REMAIN_MS",
+    "image_style_preset": "IMAGE_STYLE_PRESET",
+    "images_method": "IMAGES_METHOD",
+    "enable_subtitles": "ENABLE_SUBTITLES",
+    "bgm_filename": "DEFAULT_BGM_FILENAME",
+    "opening_quote": "OPENING_QUOTE",
+    "cover_image_model": "COVER_IMAGE_MODEL",
+    "cover_image_server": "COVER_IMAGE_SERVER",
+    "cover_image_style": "COVER_IMAGE_STYLE",
+    "cover_image_count": "COVER_IMAGE_COUNT",
+}
+
+_KNOWN_CONFIG_CONSTANTS = {
+    constant for section in _YAML_SCHEMA.values() for constant in section.values()
+}
 
 
-def get_generation_params() -> Dict[str, object]:
+def _coerce_yaml_value(constant_name: str, value: object) -> object:
+    if constant_name in {"SUBTITLE_POSITION", "SUBTITLE_SHADOW_OFFSET", "SUBTITLE_BACKGROUND_COLOR"}:
+        if isinstance(value, list):
+            return tuple(value)
+    return value
+
+
+def _load_yaml_overrides(config_path: str | os.PathLike[str]) -> Dict[str, object]:
+    path = Path(config_path)
+    if not path.exists():
+        raise FileNotFoundError(f"配置文件不存在: {path}")
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, Mapping):
+        raise ValueError("YAML配置必须是对象")
+
+    overrides: Dict[str, object] = {}
+    for section, values in data.items():
+        if isinstance(section, str) and section.isupper():
+            if section not in _KNOWN_CONFIG_CONSTANTS:
+                raise ValueError(f"未知配置项: {section}")
+            overrides[section] = _coerce_yaml_value(section, values)
+            continue
+        if section not in _YAML_SCHEMA:
+            raise ValueError(f"未知配置分组: {section}")
+        if not isinstance(values, Mapping):
+            raise ValueError(f"配置分组 {section} 必须是对象")
+        allowed = _YAML_SCHEMA[section]
+        for key, value in values.items():
+            if key not in allowed:
+                raise ValueError(f"未知配置项: {section}.{key}")
+            constant_name = allowed[key]
+            overrides[constant_name] = _coerce_yaml_value(constant_name, value)
+    return overrides
+
+
+_DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config.example.yaml"
+globals().update(_load_yaml_overrides(_DEFAULT_CONFIG_PATH))
+
+# .env may override the TTS voice so personal voice IDs do not need to live in YAML.
+VOICE = os.getenv("BYTEDANCE_TTS_VOICE_ID", str(globals().get("VOICE", ""))).strip() or globals().get("VOICE", "")
+globals()["VOICE"] = VOICE
+
+
+def _llm_base_url_for(server: str) -> str:
+    return Config.LLM_SERVER_URLS.get((server or "").strip().lower(), "")
+
+
+def _base_generation_params() -> Dict[str, object]:
+    values = globals()
+    params = {key: values[constant] for key, constant in _PARAM_CONSTANTS.items()}
+    params["llm_base_url_step2"] = config.LLM_BASE_URL_STEP2
+    params["llm_base_url_step3"] = config.LLM_BASE_URL_STEP3
+    params["output_dir"] = "output"
+    return params
+
+
+def _apply_param_overrides(params: Dict[str, object], overrides: Dict[str, object]) -> Dict[str, object]:
+    constant_to_param = {constant: key for key, constant in _PARAM_CONSTANTS.items()}
+    for constant, value in overrides.items():
+        key = constant_to_param.get(constant)
+        if key:
+            params[key] = value
+    params["llm_base_url_step2"] = _llm_base_url_for(str(params.get("llm_server_step2") or ""))
+    params["llm_base_url_step3"] = _llm_base_url_for(str(params.get("llm_server_step3") or ""))
+    return params
+
+
+def get_generation_params(config_path: Optional[str | os.PathLike[str]] = None) -> Dict[str, object]:
     """返回生成参数字典（供 CLI 使用）。"""
-    return {
-        "num_segments": NUM_SEGMENTS,
-        "image_size": IMAGE_SIZE,
-        "video_size": VIDEO_SIZE,
-        "llm_model_step2": LLM_MODEL_STEP2,
-        "llm_server_step2": LLM_SERVER_STEP2,
-        "llm_base_url_step2": config.LLM_BASE_URL_STEP2,
-        "image_server": IMAGE_SERVER,
-        "image_model": IMAGE_MODEL,
-        "llm_server_step3": LLM_SERVER_STEP3,
-        "llm_base_url_step3": config.LLM_BASE_URL_STEP3,
-        "llm_model_step3": LLM_MODEL_STEP3,
-        "voice": VOICE,
-        "resource_id": RESOURCE_ID,
-        "tts_model": TTS_MODEL,
-        "tts_emotion": TTS_EMOTION,
-        "tts_emotion_scale": TTS_EMOTION_SCALE,
-        "tts_speech_rate": TTS_SPEECH_RATE,
-        "tts_loudness_rate": TTS_LOUDNESS_RATE,
-        "mute_cut_threshold": MUTE_CUT_THRESHOLD,
-        "mute_cut_min_silence_ms": MUTE_CUT_MIN_SILENCE_MS,
-        "mute_cut_remain_ms": MUTE_CUT_REMAIN_MS,
-        "output_dir": "output",
-        "image_style_preset": IMAGE_STYLE_PRESET,
-        "images_method": IMAGES_METHOD,
-        "enable_subtitles": ENABLE_SUBTITLES,
-        "bgm_filename": DEFAULT_BGM_FILENAME,
-        "opening_quote": OPENING_QUOTE,
-        "cover_image_model": COVER_IMAGE_MODEL,
-        "cover_image_server": COVER_IMAGE_SERVER,
-        "cover_image_style": COVER_IMAGE_STYLE,
-        "cover_image_count": COVER_IMAGE_COUNT,
-    }
+    params = _base_generation_params()
+    if config_path:
+        _apply_param_overrides(params, _load_yaml_overrides(config_path))
+    return params
 
 
 class Config:
@@ -463,3 +468,177 @@ for _name, _value in list(globals().items()):
         setattr(Config, _name, _value)
 
 config = Config()
+
+
+def apply_yaml_config(config_path: str | os.PathLike[str]) -> Dict[str, object]:
+    """加载 YAML 配置，并覆盖仍读取全局 config 的旧代码路径。"""
+    overrides = _load_yaml_overrides(config_path)
+    for name, value in overrides.items():
+        globals()[name] = value
+        setattr(Config, name, value)
+        setattr(config, name, value)
+    return overrides
+
+
+def find_yaml_config(project_root: Optional[str | os.PathLike[str]] = None) -> Optional[Path]:
+    """查找默认 YAML 配置：优先 AIGC_VIDEO_CONFIG，其次项目根目录 config.yaml。"""
+    env_path = os.getenv("AIGC_VIDEO_CONFIG")
+    if env_path:
+        return Path(env_path).expanduser()
+    root = Path(project_root) if project_root else Path(__file__).resolve().parents[1]
+    candidate = root / "config.yaml"
+    return candidate if candidate.exists() else None
+
+
+def _infer_image_server_from_model(model: str) -> str:
+    """根据图像模型名推断供应商（用于兼容旧参数缺省场景）。"""
+    lower_model = (model or "").strip().lower()
+    if "doubao" in lower_model or "seedream" in lower_model:
+        return "doubao"
+    if "gemini" in lower_model or "imagen" in lower_model:
+        return "google"
+    if lower_model:
+        return "siliconflow"
+    return ""
+
+
+def _resolve_cover_image_server(image_server: str, cover_model: str) -> str:
+    inferred = _infer_image_server_from_model(cover_model)
+    if inferred == "google" and image_server == "google_adc":
+        return "google_adc"
+    return inferred or image_server
+
+
+# get_generation_params() 键名 -> VideoGenerationConfig 字段名
+_CLI_PARAM_ALIASES = (
+    ("tts_emotion", "emotion"),
+    ("tts_emotion_scale", "emotion_scale"),
+    ("tts_speech_rate", "speech_rate"),
+    ("tts_loudness_rate", "loudness_rate"),
+)
+
+
+@dataclass
+class VideoGenerationConfig:
+    """视频生成配置类，封装所有生成参数"""
+    
+    # ==================== 输入输出配置 ====================
+    input_file: str
+    output_dir: str
+    
+    # ==================== 内容生成参数 ====================
+    num_segments: int = NUM_SEGMENTS
+    extra_requirements: str = ""
+    
+    # ==================== LLM 配置 ====================
+    llm_server_step2: str = LLM_SERVER_STEP2
+    llm_base_url_step2: str = ""
+    llm_model_step2: str = LLM_MODEL_STEP2
+    llm_server_step3: str = LLM_SERVER_STEP3
+    llm_base_url_step3: str = ""
+    llm_model_step3: str = LLM_MODEL_STEP3
+    
+    # ==================== 图像生成配置 ====================
+    image_server: str = IMAGE_SERVER
+    image_model: str = IMAGE_MODEL
+    image_size: str = IMAGE_SIZE
+    image_style_preset: str = IMAGE_STYLE_PRESET
+    images_method: str = IMAGES_METHOD  # keywords / description
+    
+    # ==================== 语音合成配置 ====================
+    tts_server: str = "bytedance"
+    voice: str = VOICE
+    tts_model: str = TTS_MODEL
+    speech_rate: int = TTS_SPEECH_RATE
+    loudness_rate: int = TTS_LOUDNESS_RATE
+    emotion: str = TTS_EMOTION
+    emotion_scale: int = TTS_EMOTION_SCALE
+    mute_cut_remain_ms: int = MUTE_CUT_REMAIN_MS
+    mute_cut_threshold: int = MUTE_CUT_THRESHOLD
+
+    # ==================== 视频合成配置 ====================
+    video_size: Optional[str] = None  # None 则使用 image_size
+    enable_subtitles: bool = ENABLE_SUBTITLES
+    opening_quote: bool = OPENING_QUOTE
+    bgm_filename: Optional[str] = DEFAULT_BGM_FILENAME
+    
+    # ==================== 封面图配置 ====================
+    cover_image_size: Optional[str] = None  # None 则使用 image_size
+    cover_image_model: Optional[str] = None  # None 则使用 image_model
+    cover_image_server: str = ""
+    cover_image_style: str = COVER_IMAGE_STYLE
+    cover_image_count: int = COVER_IMAGE_COUNT
+    
+    def __post_init__(self):
+        """初始化后的验证和默认值设置"""
+        # 设置默认值
+        if self.video_size is None:
+            self.video_size = self.image_size
+        if self.cover_image_size is None:
+            self.cover_image_size = self.image_size
+        if self.cover_image_model is None:
+            self.cover_image_model = self.image_model
+        if not self.cover_image_server:
+            self.cover_image_server = _resolve_cover_image_server(self.image_server, self.cover_image_model)
+    
+    @classmethod
+    def from_cli_params(
+        cls,
+        params: dict,
+        *,
+        input_file: str,
+        output_dir: str,
+        **overrides,
+    ) -> "VideoGenerationConfig":
+        """从 get_generation_params() 风格字典创建配置（含 CLI 字段别名）。"""
+        data = dict(params)
+        for src, dst in _CLI_PARAM_ALIASES:
+            if src in data:
+                data[dst] = data.pop(src)
+        data.update(input_file=input_file, output_dir=output_dir, **overrides)
+        return cls.from_dict(data)
+
+    @classmethod
+    def from_dict(cls, params: dict) -> "VideoGenerationConfig":
+        """
+        从字典创建配置对象
+        
+        Args:
+            params: 参数字典
+            
+        Returns:
+            VideoGenerationConfig: 配置对象
+        """
+        # 过滤掉不在 dataclass 字段中的键
+        valid_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        filtered_params = {k: v for k, v in params.items() if k in valid_fields}
+        return cls(**filtered_params)
+    
+    def to_dict(self) -> dict:
+        """
+        转换为字典
+        
+        Returns:
+            dict: 参数字典
+        """
+        from dataclasses import asdict
+        return asdict(self)
+    
+    def get_effective_video_size(self) -> str:
+        """获取实际使用的视频尺寸"""
+        return self.video_size or self.image_size
+    
+    def get_effective_cover_size(self) -> str:
+        """获取实际使用的封面尺寸"""
+        return self.cover_image_size or self.image_size
+    
+    def get_effective_cover_model(self) -> str:
+        """获取实际使用的封面模型"""
+        return self.cover_image_model or self.image_model
+
+    def get_effective_cover_server(self) -> str:
+        """获取实际使用的封面供应商"""
+        return self.cover_image_server or _resolve_cover_image_server(
+            self.image_server,
+            self.cover_image_model or "",
+        )

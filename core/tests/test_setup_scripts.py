@@ -10,7 +10,7 @@ def test_windows_install_and_test_scripts_use_shared_dependency_checker() -> Non
 
     assert "-m core.dependency_check" in install_script
     assert "core/infra/remotion/app" in install_script
-    assert "npm install --no-fund --no-audit" in install_script
+    assert "npm ci --no-fund --no-audit" in install_script
     assert "-m pytest" in test_script
     assert "--require-api-keys" in test_script
 
@@ -21,6 +21,10 @@ def test_macos_install_and_test_scripts_use_shared_dependency_checker() -> None:
 
     assert "-m core.dependency_check" in install_script
     assert "core/infra/remotion/app" in install_script
-    assert "npm install --no-fund --no-audit" in install_script
+    assert "npm ci --no-fund --no-audit" in install_script
     assert "-m pytest" in test_script
     assert "--require-api-keys" in test_script
+
+
+def test_remotion_package_lock_is_committed() -> None:
+    assert (REPO_ROOT / "core" / "infra" / "remotion" / "app" / "package-lock.json").exists()

@@ -1,7 +1,7 @@
 import json
 from importlib import import_module
 
-from core.generation_config import VideoGenerationConfig
+from core.config import VideoGenerationConfig
 from core.infra.project_paths import ProjectPaths
 
 run_auto_module = import_module("core.pipeline.run_auto")

@@ -1,5 +1,6 @@
 # 环境文件
 .env
+config.yaml
 
 # Python 
 __pycache__/
@@ -55,6 +56,7 @@ tools/temp/*
 # Node.js
 node_modules/
 package-lock.json
+!core/infra/remotion/app/package-lock.json
 
 # IDE/编辑器文件
 .vscode/

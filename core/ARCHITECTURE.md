@@ -11,7 +11,6 @@ Keep orchestration in `pipeline`, business logic in `domain`, and all external s
 core/
 ├── __init__.py
 ├── config.py
-├── generation_config.py
 ├── startup.py             # CLI startup validation (provider resolution)
 ├── llm_gateway.py         # Domain-safe gateway to LLM text generation
 ├── prompts.py

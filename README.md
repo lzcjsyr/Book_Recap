@@ -62,7 +62,7 @@ pip install -r requirements.txt
 
 # 3. 安装 Remotion 开场视频依赖
 cd core/infra/remotion/app
-npm install --no-fund --no-audit
+npm ci --no-fund --no-audit
 cd ../../../..
 
 # 4. 配置API密钥（复制并编辑 .env 文件）
@@ -187,63 +187,20 @@ python -m cli
 
 ## ⚙️ 关键参数配置
 
-在 `core/config.py` 顶部的用户配置区域直接修改参数值。**参数已按7步工作流程组织**，清晰对应各步骤：
+推荐使用 YAML 配置，不直接改代码：
 
-```python
-# ==================== 全局配置 ====================
-OPENING_QUOTE = True                                   # 开场金句开关（影响步骤3+5）
-
-# ==================== 📝 步骤1：Claude Agent SDK写作 ====================
-# 步骤1支持多种服务商（mimo, siliconflow, openrouter, volcengine），按 LLM_SERVER_STEP1 自动匹配 URL 和密钥
-LLM_SERVER_STEP1 = "mimo"                                # 步骤1 LLM供应商
-LLM_MODEL_STEP1 = "mimo-v2.5-pro"                        # 填写完整模型名称
-# 步骤1固定调用 core/skills/video-book-direct-read 生成 raw.json
-
-# ==================== ✂️ 步骤1.5：脚本分段 ====================
-NUM_SEGMENTS = 25                                       # 视频分段数量 (5-50)
-
-# ==================== 🔍 步骤2：要点提取 ====================
-LLM_SERVER_STEP2 = "siliconflow"                         # 步骤2 LLM供应商
-LLM_MODEL_STEP2 = "moonshotai/Kimi-K2-Instruct-0905"   # 步骤2 LLM模型
-IMAGES_METHOD = "description"                          # 配图方式: keywords/description
-LLM_TEMPERATURE_KEYWORDS = 0.5                          # 提取随机性 (0-1)
-
-# ==================== 🎨 步骤3：视觉素材生成 ====================
-IMAGE_SERVER = "doubao"                                 # 图像生成供应商: doubao/siliconflow/google
-IMAGE_SIZE = "2560x1440"                               # 图像尺寸 (16:9 横屏)
-IMAGE_MODEL = "doubao-seedream-4-0-250828"             # 图像生成模型
-IMAGE_STYLE_PRESET = "style01"                         # 段落图像风格
-MAX_CONCURRENT_IMAGE_GENERATION = 3                    # 并发数
-OPENING_REMOTION_IP_NAME = "Cody叩底"                  # Remotion 开场左上刊头
-OPENING_REMOTION_DURATION_SECONDS = 4.0               # Remotion 开场时长（秒）
-OPENING_REMOTION_FPS = 30                             # Remotion 开场帧率
-OPENING_REMOTION_FIRST_LINE_SECONDS = 0.5             # 第一行出场时间
-OPENING_REMOTION_LAST_LINE_SECONDS = 2.0              # 最后一行出场时间
-OPENING_REMOTION_MAX_LINES = 6                        # 金句最大行数
-OPENING_REMOTION_MAX_CHARS_PER_LINE = 20              # 每行最大字符数
-
-# ==================== 🎙️ 步骤4：语音合成 ====================
-SPEED_RATIO = 1.2                                      # 语速调节 (0.8-2.0)
-LOUDNESS_RATIO = 1.0                                   # 音量调节 (0.5-2.0)
-MAX_CONCURRENT_VOICE_SYNTHESIS = 5                     # 并发数
-
-# ==================== 🎬 步骤5：视频合成 ====================
-VIDEO_SIZE = "1280x720"                                # 视频导出尺寸
-ENABLE_SUBTITLES = True                                # 是否启用字幕
-DEFAULT_BGM_FILENAME = "Far Away.mp3"                  # 默认背景音乐文件名
-BGM_DEFAULT_VOLUME = 0.18                              # BGM音量
-NARRATION_DEFAULT_VOLUME = 2.0                         # 口播音量
-# 更多视频参数: 字幕样式、时间效果、音频闪避等（见 core/config.py）
-
-# ==================== 🖼️ 步骤6：封面生成 ====================
-COVER_IMAGE_SIZE = "2250x3000"                         # 封面尺寸 (竖版3:4)
-COVER_IMAGE_SERVER = "doubao"                           # 封面供应商: doubao/siliconflow/google
-COVER_IMAGE_MODEL = "doubao-seedream-4-0-250828"       # 封面模型
-COVER_IMAGE_STYLE = "cover01"                          # 封面风格
-COVER_IMAGE_COUNT = 1                                  # 生成数量
+```bash
+cp config.example.yaml config.yaml
+python -m cli
 ```
 
-> 💡 **提示**：参数按工作流程组织，每个步骤的参数一目了然。修改时只需关注对应步骤即可。
+CLI 会自动读取项目根目录的 `config.yaml`。也可以指定其它配置文件：
+
+```bash
+python -m cli --config path/to/video.yaml
+```
+
+配置文件按流程分组：`step1`、`step1_5`、`step2`、`step3`、`remotion_opening`、`step4`、`step5`、`subtitles`、`step6`。密钥仍放在 `.env`，不要写进 YAML。
 
 ## 🎨 视频尺寸选择
 
@@ -301,9 +258,8 @@ BYTEDANCE_TTS_VOICE_ID=your_voice_id
 `core` 采用“业务流程 + 分层”结构，稳定入口保持不变：
 
 - `core/pipeline.py`：统一流程入口（兼容层，保留原有函数签名）
-- `core/config.py`：用户配置入口
+- `core/config.py`：默认值、YAML加载与生成参数数据结构入口
 - `core/prompts.py`：提示词与风格预设单一来源
-- `core/generation_config.py`：生成参数数据结构
 
 当前对外入口以本地 CLI 为主：
 
