@@ -83,7 +83,7 @@ cp "你的文档.pdf" input/
 
 ```bash
 # 启动系统
-python -m cli
+python start.py
 
 # 然后按提示操作：
 # 1. 选择"新建项目"
@@ -157,14 +157,14 @@ python -m cli
 ### 模式一：全自动模式（推荐新手）
 
 ```bash
-python -m cli
+python start.py
 # 选择"全自动模式" → 一键完成所有步骤
 ```
 
 ### 模式二：分步处理模式（推荐定制）
 
 ```bash
-python -m cli
+python start.py
 # 选择"分步处理" → 每步完成可编辑再继续
 ```
 
@@ -181,7 +181,7 @@ python -m cli
 ### 模式三：项目管理模式
 
 ```bash
-python -m cli
+python start.py
 # 选择"打开现有项目" → 继续未完成的项目或重制特定步骤
 ```
 
@@ -191,13 +191,13 @@ python -m cli
 
 ```bash
 cp config.example.yaml config.yaml
-python -m cli
+python start.py
 ```
 
 CLI 会自动读取项目根目录的 `config.yaml`。也可以指定其它配置文件：
 
 ```bash
-python -m cli --config path/to/video.yaml
+python start.py --config path/to/video.yaml
 ```
 
 配置文件按流程分组：`step1`、`step1_5`、`step2`、`step3`、`remotion_opening`、`step4`、`step5`、`subtitles`、`step6`。密钥仍放在 `.env`，不要写进 YAML。
@@ -315,9 +315,9 @@ A: 主要取决于图片数量，制作一个5分钟视频的总成本约7元人
    - 错误信息：`未找到FFmpeg，无法执行口播变速`
    - 解决方案：按照上述说明安装 FFmpeg 并验证 `ffmpeg -version` 可用
 
-2. **检查依赖与路径**：确认已安装依赖，项目根目录存在 `core/config.py`、`core/`、`cli/`。
+2. **检查依赖与路径**：确认已安装依赖，项目根目录存在 `core/config.py`、`core/`、`core/cli/`。
 
-3. **日志查看**：`cli/cli.log` 或控制台输出
+3. **日志查看**：`core/cli/cli.log` 或控制台输出
 
 4. **网络问题**：确保API服务可访问
 

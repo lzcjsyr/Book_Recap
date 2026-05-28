@@ -1,5 +1,5 @@
 def test_generation_params_match_cli_entrypoint_signature():
-    from cli.ui_helpers import run_cli_main
+    from core.cli.ui_helpers import run_cli_main
     from core.config import get_generation_params
 
     params = get_generation_params()

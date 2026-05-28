@@ -61,7 +61,7 @@ def interactive_project_selector(output_dir: str = "output") -> Optional[str]:
     """
     交互式项目选择器（从 output/ 选择已有项目文件夹）
     """
-    from cli.project_io import scan_output_projects
+    from core.cli.project_io import scan_output_projects
     
     print("\n📂 打开现有项目")
     print("正在扫描 output 目录...")
@@ -392,7 +392,7 @@ def interactive_file_selector(input_dir: str = "input") -> Optional[str]:
     Returns:
         Optional[str]: 选择的文件路径，如果用户取消则返回None
     """
-    from cli.project_io import scan_input_files
+    from core.cli.project_io import scan_input_files
 
     print("\n🚀 智能视频制作系统")
     print("正在扫描可处理的文件或文件夹...")
@@ -419,7 +419,7 @@ def interactive_music_selector(project_root: str = None):
         None: 用户取消操作（按q）
     """
     if project_root is None:
-        project_root = os.path.dirname(os.path.dirname(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     music_dir = os.path.join(project_root, "music")
 
@@ -814,7 +814,7 @@ def _run_specific_step(
             )
     elif target_step == 5:
         # 让用户选择背景音乐
-        project_root = os.path.dirname(os.path.dirname(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         selected_bgm = interactive_music_selector(project_root)
 
         # 如果用户取消（返回None），则取消步骤5的执行
@@ -1008,7 +1008,7 @@ def run_cli_main(
     # 安全导入，避免循环导入
     try:
         # 设置项目路径
-        project_root = os.path.dirname(os.path.dirname(__file__))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             
         from core.config import config, get_generation_params
         from core.pipeline.run_auto import run_auto
@@ -1158,14 +1158,14 @@ def run_cli_main(
             project_output_dir = selection["project_dir"]
             images_method = selection.get("image_method") or images_method
             return _run_step_by_step_loop(
-            project_output_dir, selection["selected_step"],
-            llm_server_step2, llm_model_step2, llm_base_url_step2,
-            llm_server_step3, llm_model_step3, llm_base_url_step3,
-            image_server, image_model, image_size, video_size, image_style_preset,
-            images_method, tts_server, voice, tts_model, speech_rate, loudness_rate,
-            emotion, emotion_scale, num_segments,
-            enable_subtitles, bgm_filename, cover_image_size, cover_image_server, cover_image_model,
-            cover_image_style, cover_image_count, opening_quote,
+                project_output_dir, selection["selected_step"],
+                llm_server_step2, llm_model_step2, llm_base_url_step2,
+                llm_server_step3, llm_model_step3, llm_base_url_step3,
+                image_server, image_model, image_size, video_size, image_style_preset,
+                images_method, tts_server, voice, tts_model, speech_rate, loudness_rate,
+                emotion, emotion_scale, num_segments,
+                enable_subtitles, bgm_filename, cover_image_size, cover_image_server, cover_image_model,
+                cover_image_style, cover_image_count, opening_quote,
                 mute_cut_threshold, mute_cut_min_silence_ms, mute_cut_remain_ms
             )
 

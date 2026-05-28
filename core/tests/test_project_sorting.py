@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from cli.project_io import scan_output_projects as scan_cli_output_projects
+from core.cli.project_io import scan_output_projects as scan_cli_output_projects
 from core.pipeline.scanner import scan_output_projects as scan_core_output_projects
 
 

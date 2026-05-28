@@ -3,35 +3,35 @@
 核心参数说明请参考 core/config.py 顶部的注释。
 """
 
-# ====================================================================
-#                           程序启动入口
-# ====================================================================
-if __name__ == "__main__":
+import argparse
+import os
+import sys
+import shutil
+
+
+def ensure_env_file(project_root: str) -> None:
+    env_path = os.path.join(project_root, ".env")
+    example_path = os.path.join(project_root, ".env.example")
+    if os.path.exists(env_path):
+        return
+    if not os.path.exists(example_path):
+        return
+    try:
+        shutil.copyfile(example_path, env_path)
+        print("✅ 已生成 .env 文件，请补充必要密钥")
+    except Exception as e:
+        print(f"⚠️ .env 文件生成失败: {e}")
+
+
+def main() -> None:
     print("🚀 智能视频制作系统启动 (CLI)")
     
     # 设置项目路径
-    import argparse
-    import os
-    import sys
-    import shutil
-    current_dir = os.path.dirname(__file__)
-    project_root = os.path.dirname(current_dir)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(current_dir))
     if project_root not in sys.path:
         sys.path.insert(0, project_root)
     
-    def ensure_env_file(project_root: str) -> None:
-        env_path = os.path.join(project_root, ".env")
-        example_path = os.path.join(project_root, ".env.example")
-        if os.path.exists(env_path):
-            return
-        if not os.path.exists(example_path):
-            return
-        try:
-            shutil.copyfile(example_path, env_path)
-            print("✅ 已生成 .env 文件，请补充必要密钥")
-        except Exception as e:
-            print(f"⚠️ .env 文件生成失败: {e}")
-
     try:
         ensure_env_file(project_root)
         parser = argparse.ArgumentParser(description="智能视频制作系统")
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         args = parser.parse_args()
 
         from core.config import apply_yaml_config, find_yaml_config, get_generation_params
-        from cli.ui_helpers import run_cli_main, setup_cli_logging
+        from core.cli.ui_helpers import run_cli_main, setup_cli_logging
 
         # 初始化 CLI 日志，使后续模块共享统一配置
         setup_cli_logging()
@@ -72,3 +72,7 @@ if __name__ == "__main__":
         print("请确保在项目根目录下运行此脚本")
     except Exception as e:
         print(f"\n❌ 运行错误: {e}")
+
+
+if __name__ == "__main__":
+    main()

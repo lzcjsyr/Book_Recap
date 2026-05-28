@@ -17,7 +17,9 @@ from core.shared import (
 def _resolve_cli_path(path: str) -> str:
     if os.path.isabs(path):
         return path
-    project_root = os.path.dirname(os.path.dirname(__file__))
+    # Since this file is located in core/cli/project_io.py, its parent is core/cli, and its parent's parent is core.
+    # The project root is three levels up.
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     return os.path.join(project_root, path)
 
 
@@ -65,11 +67,11 @@ def scan_output_projects(output_dir: str = "output") -> List[Dict[str, Any]]:
             if os.path.isdir(text_dir):
                 stat = os.stat(path)
                 projects.append(
-                    {
+                     {
                         "path": path,
                         "name": entry,
                         "modified_time": datetime.datetime.fromtimestamp(stat.st_mtime),
-                    }
+                     }
                 )
     except Exception as exc:
         logger.warning(f"扫描输出目录失败: {exc}")

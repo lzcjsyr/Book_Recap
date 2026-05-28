@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from cli.project_io import scan_input_files as scan_cli_input_files
+from core.cli.project_io import scan_input_files as scan_cli_input_files
 from core.pipeline.scanner import scan_input_files as scan_pipeline_input_files
 
 
