@@ -338,7 +338,7 @@ def run_step_1(
     extra_requirements: str = "",
 ) -> Dict[str, Any]:
     project_output_dir, paths = _create_step1_project(input_file, output_dir)
-    skill_path = os.path.join(_get_project_root(), "core", "skills", "video-book-direct-read")
+    skill_path = os.path.join(_get_project_root(), "skills", "video-book-direct-read")
     extract_path = os.path.join(paths.text, STEP1_EXTRACT_NAME)
     coverage_ledger_path = os.path.join(paths.text, STEP1_COVERAGE_LEDGER_NAME)
     session_log_path = os.path.join(paths.text, STEP1_SESSION_LOG_NAME)

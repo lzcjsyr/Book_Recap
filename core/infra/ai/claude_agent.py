@@ -142,7 +142,7 @@ class AgentSessionLog:
 
     @staticmethod
     def _is_skill_reference_path(path: str) -> bool:
-        return "/core/skills/" in path and (
+        return "/skills/" in path and (
             path.endswith("/SKILL.md") or "/references/" in path
         )
 

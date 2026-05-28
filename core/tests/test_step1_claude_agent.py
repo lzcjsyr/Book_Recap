@@ -71,7 +71,7 @@ def test_run_step_1_uses_claude_agent_skill_and_loads_raw_json(monkeypatch, tmp_
     assert Path(captured["coverage_ledger_path"]).name == claude_agent.STEP1_COVERAGE_LEDGER_NAME
     assert Path(captured["session_log_path"]).name == claude_agent.STEP1_SESSION_LOG_NAME
     assert captured["num_segments"] == 70
-    assert captured["skill_path"].endswith("core/skills/video-book-direct-read")
+    assert captured["skill_path"].endswith("skills/video-book-direct-read")
     assert captured["repo_root"] == steps._get_project_root()
     assert captured["extra_requirements"] == ""
     assert result["raw"]["total_length"] == 17
@@ -165,7 +165,7 @@ def test_step1_agent_allows_300_turns(monkeypatch, tmp_path: Path):
             session_log_path=str(tmp_path / "text" / claude_agent.STEP1_SESSION_LOG_NAME),
             text_dir=str(tmp_path / "text"),
             num_segments=70,
-            skill_path=str(tmp_path / "core" / "skills" / "video-book-direct-read"),
+            skill_path=str(tmp_path / "skills" / "video-book-direct-read"),
             repo_root=str(tmp_path),
         )
 
@@ -205,7 +205,7 @@ def test_step1_agent_adds_input_directory_to_options(monkeypatch, tmp_path: Path
             session_log_path=str(tmp_path / "text" / claude_agent.STEP1_SESSION_LOG_NAME),
             text_dir=str(tmp_path / "text"),
             num_segments=70,
-            skill_path=str(tmp_path / "core" / "skills" / "video-book-direct-read"),
+            skill_path=str(tmp_path / "skills" / "video-book-direct-read"),
             repo_root=str(tmp_path),
         )
 
@@ -217,7 +217,7 @@ def test_step1_agent_adds_input_directory_to_options(monkeypatch, tmp_path: Path
 def test_step1_agent_prompt_includes_absolute_skill_path(tmp_path: Path):
     from core.prompts import build_step1_agent_prompt
 
-    skill_path = tmp_path / "core" / "skills" / "video-book-direct-read"
+    skill_path = tmp_path / "skills" / "video-book-direct-read"
     skill_path.mkdir(parents=True)
 
     prompt = build_step1_agent_prompt(
@@ -245,7 +245,7 @@ def test_step1_agent_prompt_includes_extra_requirements(tmp_path: Path):
         input_file=str(tmp_path / "book.pdf"),
         output_json=str(tmp_path / "output" / "text" / "raw.json"),
         text_dir=str(tmp_path / "output" / "text"),
-        skill_path=str(tmp_path / "core" / "skills" / "video-book-direct-read"),
+        skill_path=str(tmp_path / "skills" / "video-book-direct-read"),
         extra_requirements="重点突出女性命运，不要写成王朝史摘要",
     )
 
@@ -347,7 +347,7 @@ def test_agent_session_log_omits_skill_reference_read_content(tmp_path: Path):
                 "tool_use_result": {
                     "type": "text",
                     "file": {
-                        "filePath": "/repo/core/skills/video-book-direct-read/references/reading-strategy.md",
+                        "filePath": "/repo/skills/video-book-direct-read/references/reading-strategy.md",
                         "content": skill_content,
                         "numLines": 2001,
                     },

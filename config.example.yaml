@@ -18,11 +18,11 @@ global:
 # 步骤1：原始文稿写作
 # =============================================================================
 step1:
-  # 可选：mimo / deepseek / siliconflow / openrouter / volcengine
+  # 可选：mimo / deepseek / siliconflow / openrouter
   llm_server: mimo
   # 按供应商要求填写完整模型名。
   llm_model: mimo-v2.5-pro
-  # 使用 core/skills 下的写作 skill；一般不需要改。
+  # 使用根目录 skills/ 下的写作 skill；一般不需要改。
   agent_skill: video-book-direct-read
 
 # =============================================================================
