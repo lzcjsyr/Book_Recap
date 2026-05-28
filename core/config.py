@@ -23,8 +23,8 @@ NUM_SEGMENTS = 75                                       # 视频分段数量 (5-
 # ════════════════════════════════════════════════════════════════════════════════
 # 🔍 步骤2：要点提取 - 视觉关键词
 # ════════════════════════════════════════════════════════════════════════════════
-LLM_SERVER_STEP2 = "siliconflow"                        # 步骤2 LLM供应商，可选: siliconflow, openrouter (基于 OpenAI SDK 格式适配)
-LLM_BASE_URL_STEP2 = "https://api.siliconflow.cn/v1"    # 步骤2 LLM base URL
+# 步骤2 LLM供应商，可选: mimo, deepseek, siliconflow, openrouter, volcengine (基于 OpenAI SDK 格式适配)
+LLM_SERVER_STEP2 = "siliconflow"                        
 LLM_MODEL_STEP2 = "Pro/moonshotai/Kimi-K2.6"            # 步骤2模型（要点提取）
 IMAGES_METHOD = "description"                           # 配图生成方式: keywords / description
 LLM_TEMPERATURE_KEYWORDS = 0.5                          # 提取随机性 (0-1，越大越随机)
@@ -38,12 +38,11 @@ IMAGE_SERVER = "google"                                # 供应商: doubao / sil
 IMAGE_SIZE = "2560x1440"                               # 图像尺寸 (16:9 横屏)
 IMAGE_MODEL = "gemini-3.1-flash-image-preview"         # 模型：gemini-3.1-flash-image-preview,doubao-seedream-5-0-260128
 IMAGE_STYLE_PRESET = "style02"                         # 段落图像风格预设 (详见 prompts.py)
-
-LLM_SERVER_STEP3 = "siliconflow"                        # 步骤3提示词脱敏 LLM供应商，可选: siliconflow, openrouter (基于 OpenAI SDK 格式适配)
-LLM_BASE_URL_STEP3 = "https://api.siliconflow.cn/v1"    # 步骤3提示词脱敏 LLM base URL
-LLM_MODEL_STEP3 = "Pro/moonshotai/Kimi-K2.6"            # 步骤3提示词脱敏模型
-
 MAX_CONCURRENT_IMAGE_GENERATION = 1                    # 图像生成最大并发数
+
+# 步骤3提示词脱敏 LLM供应商，可选: mimo, deepseek, siliconflow, openrouter, volcengine (基于 OpenAI SDK 格式适配)
+LLM_SERVER_STEP3 = "siliconflow"                        
+LLM_MODEL_STEP3 = "Pro/moonshotai/Kimi-K2.6"            # 步骤3提示词脱敏模型
 
 # --- Remotion 开场视频配置（以下参数会直接影响 opening.mp4 的真实效果） ---
 OPENING_REMOTION_IP_NAME = "Cody叩底"                   # 左上刊头文案
@@ -197,11 +196,11 @@ def get_generation_params() -> Dict[str, object]:
         "video_size": VIDEO_SIZE,
         "llm_model_step2": LLM_MODEL_STEP2,
         "llm_server_step2": LLM_SERVER_STEP2,
-        "llm_base_url_step2": LLM_BASE_URL_STEP2,
+        "llm_base_url_step2": config.LLM_BASE_URL_STEP2,
         "image_server": IMAGE_SERVER,
         "image_model": IMAGE_MODEL,
         "llm_server_step3": LLM_SERVER_STEP3,
-        "llm_base_url_step3": LLM_BASE_URL_STEP3,
+        "llm_base_url_step3": config.LLM_BASE_URL_STEP3,
         "llm_model_step3": LLM_MODEL_STEP3,
         "voice": VOICE,
         "resource_id": RESOURCE_ID,
@@ -246,7 +245,7 @@ class Config:
     DEFAULT_VOICE = VOICE
     DEFAULT_OUTPUT_DIR = "output"
 
-    SUPPORTED_LLM_SERVERS = ["openrouter", "siliconflow"]
+    SUPPORTED_LLM_SERVERS = ["openrouter", "siliconflow", "mimo", "deepseek", "volcengine"]
     SUPPORTED_IMAGE_SERVERS = ["doubao", "siliconflow", "google", "google_adc"]
     SUPPORTED_TTS_SERVERS = ["bytedance"]
     SUPPORTED_IMAGE_METHODS = ["keywords", "description"]
@@ -316,6 +315,12 @@ class Config:
             missing.append("SILICONFLOW_KEY")
         if "openrouter" in llm_servers and not key_status["openrouter"]:
             missing.append("OPENROUTER_API_KEY")
+        if "mimo" in llm_servers and not key_status["mimo"]:
+            missing.append("MIMO_API_KEY")
+        if "deepseek" in llm_servers and not key_status["deepseek"]:
+            missing.append("DEEPSEEK_API_KEY")
+        if "volcengine" in llm_servers and not key_status["seedream"]:
+            missing.append("SEEDREAM_API_KEY")
         if not (key_status["seedream"] or key_status["siliconflow"] or key_status["google"]):
             missing.append("SEEDREAM_API_KEY 或 SILICONFLOW_KEY 或 GOOGLE_CLOUD_API_KEY")
         if not key_status["bytedance_tts"]:
@@ -434,6 +439,38 @@ class Config:
                 f"Doubao-3模型支持: 512x512 到 2048x2048 之间的任意尺寸\n"
                 f"腾讯混元图像支持: 宽高范围 512-2048，面积不超过 1024x1024"
             )
+
+    @property
+    def LLM_BASE_URL_STEP2(self) -> str:
+        """根据 LLM_SERVER_STEP2 自动匹配 base URL"""
+        server = (getattr(self, "LLM_SERVER_STEP2", "") or "").strip().lower()
+        if server == "siliconflow":
+            return "https://api.siliconflow.cn/v1"
+        elif server == "openrouter":
+            return "https://openrouter.ai/api/v1"
+        elif server == "mimo":
+            return "https://token-plan-sgp.xiaomimimo.com/anthropic"
+        elif server == "volcengine":
+            return "https://ark.cn-beijing.volces.com/api/v3"
+        elif server == "deepseek":
+            return "https://api.deepseek.com/v1"
+        return ""
+
+    @property
+    def LLM_BASE_URL_STEP3(self) -> str:
+        """根据 LLM_SERVER_STEP3 自动匹配 base URL"""
+        server = (getattr(self, "LLM_SERVER_STEP3", "") or "").strip().lower()
+        if server == "siliconflow":
+            return "https://api.siliconflow.cn/v1"
+        elif server == "openrouter":
+            return "https://openrouter.ai/api/v1"
+        elif server == "mimo":
+            return "https://token-plan-sgp.xiaomimimo.com/anthropic"
+        elif server == "volcengine":
+            return "https://ark.cn-beijing.volces.com/api/v3"
+        elif server == "deepseek":
+            return "https://api.deepseek.com/v1"
+        return ""
 
 
 # 将用户配置区的模块常量挂到 Config，避免在类体内逐字段复制

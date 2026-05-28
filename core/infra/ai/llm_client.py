@@ -36,6 +36,18 @@ def text_to_text(
             if not config.SILICONFLOW_KEY:
                 raise APIError("SILICONFLOW_KEY未配置")
             api_key = config.SILICONFLOW_KEY
+        elif server == "mimo":
+            if not config.MIMO_API_KEY:
+                raise APIError("MIMO_API_KEY未配置")
+            api_key = config.MIMO_API_KEY
+        elif server == "deepseek":
+            if not config.DEEPSEEK_API_KEY:
+                raise APIError("DEEPSEEK_API_KEY未配置")
+            api_key = config.DEEPSEEK_API_KEY
+        elif server == "volcengine":
+            if not config.SEEDREAM_API_KEY:
+                raise APIError("SEEDREAM_API_KEY未配置")
+            api_key = config.SEEDREAM_API_KEY
         else:
             raise ValueError(f"不支持的服务商: {server}，支持的服务商: {config.SUPPORTED_LLM_SERVERS}")
         if not base_url:
