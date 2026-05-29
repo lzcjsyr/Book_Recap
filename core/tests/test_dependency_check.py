@@ -9,13 +9,13 @@ def test_dependency_checker_reports_missing_runtime_and_remotion_dependencies(tm
     remotion_app = repo_root / "core" / "infra" / "remotion" / "app"
     remotion_app.mkdir(parents=True)
     (remotion_app / "package.json").write_text("{}", encoding="utf-8")
-    (repo_root / "requirements.txt").write_text("requests>=2\n", encoding="utf-8")
+    (repo_root / "pyproject.toml").write_text('dependencies = ["requests>=2"]\n', encoding="utf-8")
 
     checker = DependencyChecker(
         repo_root=repo_root,
         which=lambda _name: None,
         import_checker=lambda _name: False,
-        python_version=(3, 10, 0),
+        python_version=(3, 9, 0),
     )
 
     report = checker.check()
@@ -42,7 +42,7 @@ def test_dependency_checker_passes_when_core_dependencies_are_present(tmp_path: 
     (remotion_app / "package.json").write_text("{}", encoding="utf-8")
     remotion_renderer = repo_root / "core" / "infra" / "remotion" / "app" / "node_modules" / "@remotion" / "renderer"
     remotion_renderer.mkdir(parents=True)
-    (repo_root / "requirements.txt").write_text("requests>=2\npython-dotenv>=1\n", encoding="utf-8")
+    (repo_root / "pyproject.toml").write_text('dependencies = ["requests>=2", "python-dotenv>=1"]\n', encoding="utf-8")
 
     checker = DependencyChecker(
         repo_root=repo_root,
@@ -68,7 +68,7 @@ def test_dependency_checker_can_require_configured_api_keys(tmp_path: Path, monk
     (remotion_app / "package.json").write_text("{}", encoding="utf-8")
     remotion_renderer = repo_root / "core" / "infra" / "remotion" / "app" / "node_modules" / "@remotion" / "renderer"
     remotion_renderer.mkdir(parents=True)
-    (repo_root / "requirements.txt").write_text("", encoding="utf-8")
+    (repo_root / "pyproject.toml").write_text('dependencies = []\n', encoding="utf-8")
 
     monkeypatch.setenv("MIMO_API_KEY", "")
     checker = DependencyChecker(

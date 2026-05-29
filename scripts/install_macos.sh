@@ -28,7 +28,7 @@ if [ ! -x "$PYTHON_EXE" ]; then
 fi
 
 "$PYTHON_EXE" -m pip install --upgrade pip
-"$PYTHON_EXE" -m pip install -r "$REPO_ROOT/requirements.txt"
+"$PYTHON_EXE" -m pip install -e "$REPO_ROOT"
 
 if [ ! -f "$REPO_ROOT/.env" ] && [ -f "$REPO_ROOT/.env.example" ]; then
   cp "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"

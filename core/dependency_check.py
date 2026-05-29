@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Sequence
 
 
-MIN_PYTHON_VERSION = (3, 11)
+MIN_PYTHON_VERSION = (3, 10)
 
 PACKAGE_IMPORT_NAMES = {
     "pillow": "PIL",
@@ -142,18 +142,18 @@ class DependencyChecker:
 
     def _check_python_packages(self) -> CheckItem:
         missing = []
-        for package_name in self._requirements_package_names():
+        for package_name in self._pyproject_package_names():
             import_name = PACKAGE_IMPORT_NAMES.get(package_name, package_name.replace("-", "_"))
             if not self.import_checker(import_name):
                 missing.append(package_name)
 
         if not missing:
-            return CheckItem("Python packages", True, "requirements.txt 中的包可导入")
+            return CheckItem("Python packages", True, "pyproject.toml 中的依赖包已安装并可导入")
         return CheckItem(
             "Python packages",
             False,
             "缺少: " + ", ".join(missing),
-            "运行 python -m pip install -r requirements.txt。",
+            "运行 pip install -e . 或 pip install . 安装依赖。",
         )
 
     def _check_env_file(self) -> CheckItem:
@@ -203,18 +203,24 @@ class DependencyChecker:
     def _remotion_app_dir(self) -> Path:
         return self.repo_root / "core" / "infra" / "remotion" / "app"
 
-    def _requirements_package_names(self) -> Iterable[str]:
-        requirements = self.repo_root / "requirements.txt"
-        if not requirements.exists():
+    def _pyproject_package_names(self) -> Iterable[str]:
+        pyproject = self.repo_root / "pyproject.toml"
+        if not pyproject.exists():
             return []
+        content = pyproject.read_text(encoding="utf-8")
+        match = re.search(r"dependencies\s*=\s*\[(.*?)\]", content, re.DOTALL)
+        if not match:
+            return []
+        deps_block = match.group(1)
         package_names = []
-        for raw_line in requirements.read_text(encoding="utf-8").splitlines():
-            line = raw_line.split("#", 1)[0].strip()
-            if not line or line.startswith(("-", "http:", "https:", "git+")):
+        for raw_line in deps_block.splitlines():
+            line = raw_line.strip().strip(",").strip('"').strip("'")
+            if not line or line.startswith("#"):
                 continue
-            match = re.match(r"([A-Za-z0-9_.-]+)", line)
-            if match:
-                package_names.append(match.group(1).lower())
+            # Extract package name (ignoring extras and version, e.g. volcengine-python-sdk[ark]>=1.0.94 -> volcengine-python-sdk)
+            pkg_match = re.match(r"([A-Za-z0-9_.-]+)", line)
+            if pkg_match:
+                package_names.append(pkg_match.group(1).lower())
         return package_names
 
     def _load_env_values(self) -> dict[str, str]:

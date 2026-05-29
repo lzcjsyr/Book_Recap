@@ -29,7 +29,7 @@ if (-not (Test-Path $PythonExe)) {
 }
 
 & $PythonExe -m pip install --upgrade pip
-& $PythonExe -m pip install -r (Join-Path $RepoRoot "requirements.txt")
+& $PythonExe -m pip install -e $RepoRoot
 
 if (-not (Test-Path (Join-Path $RepoRoot ".env")) -and (Test-Path (Join-Path $RepoRoot ".env.example"))) {
     Copy-Item (Join-Path $RepoRoot ".env.example") (Join-Path $RepoRoot ".env")

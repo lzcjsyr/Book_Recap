@@ -1,330 +1,94 @@
-# 智能视频制作系统
+# 智能视频制作系统 (Book2Video)
 
-**将任何文档自动转换为专业短视频解说**
-
-一键将PDF、EPUB等文档智能转换为带字幕、配音、配图的高质量短视频，专为知识类内容创作设计。
-
-## 🚀 快速上手
-
-### 系统要求
-
-- **Python 3.13+**（推荐）
-- **FFmpeg**（视频处理必需）
-- 支持 macOS、Windows、Linux
-
-### 第一步：安装配置
-
-#### 推荐：一键安装脚本
-
-```bash
-# Windows PowerShell
-powershell -ExecutionPolicy Bypass -File scripts/install_windows.ps1
-
-# macOS
-./scripts/install_macos.sh
-```
-
-安装脚本会检查 Python、FFmpeg、Node.js、npm，安装 Python 依赖和 Remotion 开场视频依赖，并自动从 `.env.example` 生成 `.env`。
-
-安装后可运行测试脚本做完整检查：
-
-```bash
-# Windows PowerShell
-powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1
-
-# macOS
-./scripts/test_macos.sh
-
-# 如需连 API 密钥也一起检查：
-powershell -ExecutionPolicy Bypass -File scripts/test_windows.ps1 -RequireApiKeys
-./scripts/test_macos.sh --require-api-keys
-```
-
-#### 手动安装
-
-```bash
-# 1. 安装 FFmpeg（视频合成必需的系统工具）
-# macOS
-brew install ffmpeg
-
-# Windows (使用 Chocolatey)
-choco install ffmpeg
-# 或从 https://ffmpeg.org/download.html 下载
-
-# Linux (Ubuntu/Debian)
-sudo apt install ffmpeg
-
-# 验证安装
-ffmpeg -version
-
-# 2. 安装 Python 依赖
-pip install -r requirements.txt
-
-# 3. 安装 Remotion 开场视频依赖
-cd core/infra/remotion/app
-npm ci --no-fund --no-audit
-cd ../../../..
-
-# 4. 配置API密钥（复制并编辑 .env 文件）
-cp .env.example .env
-# 编辑 .env 文件，填入你的API密钥
-
-```
-
-### 第二步：准备文档
-
-```bash
-# 将要制作视频的文档放入 input 文件夹
-# 支持格式：PDF、EPUB、MOBI、DOCX等
-cp "你的文档.pdf" input/
-```
-
-### 第三步：开始制作
-
-```bash
-# 启动系统
-python start.py
-
-# 然后按提示操作：
-# 1. 选择"新建项目"
-# 2. 选择你的文档文件
-# 3. 选择"全自动模式"（推荐新手）
-# 等待5-15分钟，视频制作完成！
-```
-
-### 输出结果
-
-制作完成后，在 `output/项目名称_时间/` 文件夹中查看：
-
-- `final_video.mp4` - 最终视频文件
-- `images/` - 生成的配图
-- `voice/` - 语音文件和字幕
-- `text/` - 文本内容（可编辑重制）
-
-## 💡 核心工作流程
-
-系统采用**7步智能流程**，将长篇文档转换为短视频：
-
-### 步骤1：智能总结 - 文档压缩
-
-- **输入**：任意长度的文档文件（PDF、EPUB、DOCX等）
-- **处理**：AI模型智能提取核心内容并压缩为适合视频的篇幅（默认2000字）
-- **输出**：标题、开场金句、压缩正文
-- **可编辑**：`raw.docx` 可手动编辑后重新切分
-
-### 步骤1.5：脚本分段 - 段落切分
-
-- **输入**：总结后的文本内容
-- **处理**：支持手动切分（按换行符）或自动切分（智能均分为指定段数）
-- **输出**：带时长预估的分段脚本（默认25段）
-- **可编辑**：`script.docx` 可调整分段和文本后重新生成
-
-### 步骤2：要点提取 - 视觉关键词
-
-- **输入**：分段脚本数据
-- **处理**：为每段提取视觉关键词和氛围词（keywords模式）或生成描述摘要（description模式）
-- **输出**：`keywords.json` 或 `mini_summary.json`
-
-### 步骤3：视觉素材生成 - 开场视频 + AI配图
-
-- **输入**：脚本 + 关键词/描述数据
-- **处理**：Remotion 生成开场金句视频，AI图像生成模型为每段创建匹配配图
-- **输出**：开场视频 `images/opening.mp4` + 各段配图（PNG格式）
-- **支持**：指定段落重新生成、切换风格
-
-### 步骤4：语音合成 - TTS配音
-
-- **输入**：分段脚本文本
-- **处理**：调用TTS引擎合成语音，支持语速、音量调节
-- **输出**：各段语音文件 + SRT字幕文件
-- **支持**：多种音色选择、指定段落重新生成
-
-### 步骤5：视频合成 - 最终导出
-
-- **输入**：图像、语音、字幕、背景音乐
-- **处理**：MoviePy合成视频，添加字幕特效和背景音乐
-- **输出**：高质量mp4视频文件
-
-### 步骤6：封面生成 - 宣传素材
-
-- **输入**：项目标题和内容信息
-- **处理**：AI生成竖版封面图，适用于社交媒体分享
-- **输出**：高清封面图片（可生成多张备选）
-- **特点**：独立步骤，可随时生成，不影响视频制作流程
-
-## 🎛️ 使用模式
-
-### 模式一：全自动模式（推荐新手）
-
-```bash
-python start.py
-# 选择"全自动模式" → 一键完成所有步骤
-```
-
-### 模式二：分步处理模式（推荐定制）
-
-```bash
-python start.py
-# 选择"分步处理" → 每步完成可编辑再继续
-```
-
-**分步模式优势：**
-
-- 步骤1后：可编辑 `raw.docx` 调整总结内容
-- 步骤1.5后：可编辑 `script.docx` 调整分段和文本
-- 步骤2后：可重新生成关键词或切换配图模式
-- 步骤3后：可重跑图像生成尝试不同风格或重新生成指定段落
-- 步骤4后：可重跑语音合成尝试不同音色或调整语速
-- 步骤5后：可调整参数重新合成视频
-- 步骤6：可随时生成封面图，支持多张备选
-
-### 模式三：项目管理模式
-
-```bash
-python start.py
-# 选择"打开现有项目" → 继续未完成的项目或重制特定步骤
-```
-
-## ⚙️ 关键参数配置
-
-推荐使用 YAML 配置，不直接改代码：
-
-```bash
-cp config.example.yaml config.yaml
-python start.py
-```
-
-CLI 会自动读取项目根目录的 `config.yaml`。也可以指定其它配置文件：
-
-```bash
-python start.py --config path/to/video.yaml
-```
-
-配置文件按流程分组：`step1`、`step1_5`、`step2`、`step3`、`remotion_opening`、`step4`、`step5`、`subtitles`、`step6`。密钥仍放在 `.env`，不要写进 YAML。
-
-## 🎨 视频尺寸选择
-
-| 尺寸      | 比例 | 适用场景         |
-| --------- | ---- | ---------------- |
-| 1280x720  | 16:9 | YouTube、B站横屏 |
-| 720x1280  | 9:16 | 抖音、快手竖屏   |
-| 1024x1024 | 1:1  | 微信视频号       |
-| 864x1152  | 3:4  | 小红书竖屏       |
-
-## 🎭 图像风格预设
-
-| 风格代码 | 风格名称 | 视觉特点               |
-| -------- | -------- | ---------------------- |
-| style01  | 概念极简 | 简洁现代，突出重点     |
-| style02  | 俯视古典 | 经典构图，文艺气质     |
-| style05  | 综合平衡 | 适用性广，推荐默认     |
-| style08  | 科技未来 | 科幻感强，适合技术内容 |
-
-## 📁 必需的API密钥
-
-在 `.env` 文件中配置以下密钥：
-
-```env
-# 步骤1 Claude Agent（必需）
-MIMO_API_KEY=your_key            # 小米 MiMo，驱动步骤1
-
-# LLM服务（至少配置一个，步骤2/3）
-OPENROUTER_API_KEY=your_key      # 推荐，模型选择多
-SILICONFLOW_KEY=your_key         # 备选方案
-
-# 图像生成（至少配置一个）
-VOLCENGINE_API_KEY=your_key      # 火山引擎方舟（用于 豆包-Seedream 生图与火山大语言模型）
-GOOGLE_CLOUD_API_KEY=your_key    # Google Vertex AI 生图（单一配置）
-# Google图像并发上限（可选，默认2，仅 image_server=google 生效）
-# GOOGLE_MAX_CONCURRENT_IMAGE_GENERATION=2
-
-# 语音合成（必需）
-BYTEDANCE_TTS_API_KEY=your_api_key
-BYTEDANCE_TTS_VOICE_ID=your_voice_id
-```
-
-## 🛠️ 高级功能
-
-### 项目管理
-
-- **断点续制**：意外中断可从任意步骤继续
-- **重制优化**：可重新执行特定步骤优化效果
-- **批量处理**：同时处理多个文档项目
-- **文件编辑**：支持编辑中间产物后重新处理
-
-## 🧱 Core代码结构（重构后）
-
-`core` 采用“业务流程 + 分层”结构，稳定入口保持不变：
-
-- `core/pipeline.py`：统一流程入口（兼容层，保留原有函数签名）
-- `core/config.py`：默认值、YAML加载与生成参数数据结构入口
-- `core/prompts.py`：提示词与风格预设单一来源
-
-当前对外入口以本地 CLI 为主：
-
-- `cli/`：交互式命令行入口
-
-内部实现按层组织：
-
-- `core/pipeline/`：编排层（run_auto/steps/scanner）
-- `core/domain/`：业务能力（document/script/media/video）
-- `core/infra/`：外部适配（ai/storage）
-- `core/shared/`：通用能力（logger/errors/retry/file/json）
-
-详细说明见 `core/ARCHITECTURE.md`。
-
-## 🏗️ 输出文件结构
-
-```
-output/
-└── 《你的文档标题》_MMDD_HHMM/
-    ├── final_video.mp4          # 🎬 最终视频
-    ├── images/
-    │   ├── opening.mp4          # 开场金句视频
-    │   └── segment_1.png        # 各段配图
-    ├── voice/
-    │   ├── opening.mp3          # 开场语音
-    │   ├── voice_1.mp3          # 各段语音
-    │   └── 字幕.srt             # 字幕文件
-    └── text/
-        ├── raw.json/.docx       # 总结内容（可编辑）
-        ├── script.json/.docx    # 分段脚本（可编辑）
-        └── keywords.json        # 关键词数据
-```
-
-## ❓ 常见问题
-
-**Q: 视频制作需要多长时间？**
-A: 通常5-15分钟，取决于文档长度和API响应速度。
-
-**Q: 支持哪些文档格式？**
-A: PDF、EPUB、MOBI、DOCX、TXT等主流格式。
-
-**Q: 可以自定义背景音乐吗？**
-A: 可以，将mp3文件放入 `music/` 文件夹，在参数中指定文件名。
-
-**Q: 如何调整视频内容？**
-A: 使用分步模式，每步生成的docx文件都可编辑后重新处理。
-
-**Q: API费用大概多少？**
-A: 主要取决于图片数量，制作一个5分钟视频的总成本约7元人民币。
-
-## 🔧 故障排除
-
-1. **FFmpeg 未安装**：
-   - 错误信息：`未找到FFmpeg，无法执行口播变速`
-   - 解决方案：按照上述说明安装 FFmpeg 并验证 `ffmpeg -version` 可用
-
-2. **检查依赖与路径**：确认已安装依赖，项目根目录存在 `core/config.py`、`core/`、`core/cli/`。
-
-3. **日志查看**：`core/cli/cli.log` 或控制台输出
-
-4. **网络问题**：确保API服务可访问
-
-5. **依赖问题**：重新运行 `pip install -r requirements.txt`
+**一键将 PDF、EPUB 等文档自动转换为带字幕、配音、配图的高质量短视频。**
 
 ---
 
-**开始你的智能视频创作之旅！** 🚀
+## 🚀 快速上手
 
-将知识转化为视频，让AI为你的内容赋能。
+### 1. 系统要求
+
+* Python 3.10+
+* FFmpeg (视频处理必需，请确保系统已安装并添加到环境变量)
+
+### 2. 安装步骤
+
+```bash
+# 1. 安装 Python 依赖
+pip install -e .
+
+# 2. 安装 Remotion 开场视频依赖（可选）
+cd core/infra/remotion/app && npm ci && cd ../../../..
+```
+
+*提示：macOS 用户可直接运行 `./scripts/install_macos.sh`，Windows 用户运行 `powershell -ExecutionPolicy Bypass -File scripts/install_windows.ps1` 进行一键环境安装与测试。*
+
+### 3. 配置密钥
+
+复制 `.env.example` 为 `.env` 并填写你所需要用到的 API 密钥：
+
+* **大模型服务** (如 MiMo, OpenRouter, SiliconFlow)
+* **图像生成** (如 火山引擎, Google Cloud Vertex AI)
+* **语音合成** (如 字节跳动 TTS)
+
+### 4. 运行制作
+
+将待处理的文档（PDF、EPUB、DOCX、MOBI 等）放入 `input/` 文件夹下，然后运行：
+
+```bash
+python start.py
+```
+
+根据终端提示操作：选择**新建项目** -> **选择你的文档** -> 推荐新手选择**全自动模式**，即可一键完成制作。
+
+---
+
+## 💡 核心工作流
+
+系统采用模块化设计，将长文档转化为短视频分为以下核心步骤：
+
+1. **智能总结**：AI 提炼文档核心内容为适合短视频的篇幅。
+2. **段落切分**：智能分段并生成每段对应的口播文案。
+3. **视觉描述**：分析语义，提取每段画面的视觉描述或关键词。
+4. **素材生成**：调用 AI 生图模型生成段落插图，并渲染精美的 Remotion 开场视频。
+5. **语音合成**：采用高品质 TTS 引擎生成拟真配音及 SRT 字幕。
+6. **视频合成**：混合开场视频、转场画面、配音、字幕及背景音乐，导出 MP4 视频。
+7. **封面生成**：自动生成适配社交媒体的竖版封面图。
+
+---
+
+## 🎛️ 使用模式
+
+运行 `python start.py` 后可选择：
+
+* **全自动模式（推荐）**：一键跑通所有流程，坐等视频产出。
+* **分步处理模式**：每一步完成后，支持编辑中间生成的 Word 脚本（如 `raw.docx`、`script.docx`）或更换图片风格，精细化定制视频。
+* **项目管理模式**：打开现有项目，从任意中断的步骤继续执行或重新制作特定部分。
+
+---
+
+## 🗂️ 项目目录与模块说明
+
+为了方便你进行定制开发、效果微调或查找对应资源，以下是根目录下各主要模块的功能与职责：
+
+* 📂 **`core/`** — **系统核心代码库**。
+* 📂 **`prompts/`** — **大模型提示词与风格模板**。包含视频生成过程中，总结段落、提取视觉关键词、润色口播文案所用的核心 Prompt 预设。如需调整文案生成风格或添加自定义艺术风格，在此修改。
+* 📂 **`skills/`** — **自动化技能扩展**。用于存放定制化的 Agent 技能与外置插件。
+* 📂 **`scripts/`** — **系统管理脚本**。提供 macOS/Linux 以及 Windows 环境下一键环境安装、依赖检验以及完整功能诊断的脚本。
+* 📂 **`input/`** — **待处理文档输入目录**。放入需要转为视频的 PDF、EPUB、DOCX 等原始电子书/文档。
+* 📂 **`output/`** — **项目生成输出目录**。每一次视频制作都将在此按“项目名_时间戳”生成独立的文件夹，包含视频和全部中间缓存资源。
+* 📂 **`music/`** — **背景音乐储备库**。存放合成视频时备选的 MP3 音频，可在配置文件中自由指定。
+* 📄 **`start.py`** — **系统控制台主入口**。直接通过 `python start.py` 即可进入交互式流程引导。
+* 📄 **`pyproject.toml`** — **Python 依赖包配置**。规范了全部核心依赖组件及版本信息。
+* 📄 **`config.yaml`** — **系统运行全局配置文件**（复制自 `config.example.yaml`）。可调节每一步的视频分辨率、生图模式、音色语速以及模型选型等所有个性化配置。
+
+---
+
+## 📁 制作产出结构
+
+视频制作完成后，在 `output/《你的文档标题》_MMDD_HHMM/` 目录下将产生以下结构，供随时审阅或二次重制：
+
+* `final_video.mp4` — **最终合成的高清短视频文件**
+* `images/` — 各分段配图及精美的 Remotion 开场动画（`opening.mp4`）
+* `voice/` — 对应段落的高保真配音 MP3 及字幕文件（`字幕.srt`）
+* `text/` — 中间过程中 AI 生成并导出的 Word 文案脚本与段落总结文件（可供编辑修正后实现精准二次重制）
