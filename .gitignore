@@ -77,6 +77,6 @@ build/
 music/*.mp3
 music/*.wav
 
-# 技能文件夹：仅提交基础技能 sample_writer，忽略其他自定义技能（原来的 video-book-direct-read 也会被忽略）
+# 技能文件夹：仅提交基础技能 sample_writer，忽略其他自定义技能
 skills/*
 !skills/sample_writer/
