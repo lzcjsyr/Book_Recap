@@ -363,12 +363,13 @@ async def _run_step1_agent_async(
         skill_path=skill_path,
         extra_requirements=extra_requirements,
     )
+    actual_skill = Path(skill_path).name if skill_path else STEP1_AGENT_SKILL
     options = ClaudeAgentOptions(
         cwd=repo_root,
         model=config.LLM_MODEL_STEP1,
         tools=STEP1_AGENT_TOOLS,
         allowed_tools=STEP1_AGENT_TOOLS,
-        skills=[STEP1_AGENT_SKILL],
+        skills=[actual_skill],
         permission_mode="acceptEdits",
         max_turns=300,
         add_dirs=_step1_agent_add_dirs(input_file),
@@ -391,7 +392,7 @@ async def _run_step1_agent_async(
             "add_dirs": _step1_agent_add_dirs(input_file),
             "model": config.LLM_MODEL_STEP1,
             "tools": STEP1_AGENT_TOOLS,
-            "skill": STEP1_AGENT_SKILL,
+            "skill": actual_skill,
             "prompt": prompt,
         },
     )

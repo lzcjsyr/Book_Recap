@@ -522,3 +522,25 @@ def test_agent_session_log_keeps_bash_extract_window_errors(tmp_path: Path):
     second = json.loads(log_path.read_text(encoding="utf-8").splitlines()[1])
     assert second["message"]["content"][0]["content"] == "sed: file not found"
     assert second["message"]["tool_use_result"]["stderr"] == "sed: file not found"
+
+
+def test_run_step_1_skill_path_fallback(monkeypatch, tmp_path: Path):
+    input_file = tmp_path / "book.md"
+    input_file.write_text("source text", encoding="utf-8")
+
+    captured = {}
+
+    def fake_run_step1_agent(**kwargs):
+        captured.update(kwargs)
+        Path(kwargs["output_json"]).write_text(json.dumps(_valid_raw(), ensure_ascii=False), encoding="utf-8")
+
+    monkeypatch.setattr(steps, "run_step1_agent", fake_run_step1_agent)
+    monkeypatch.setattr(steps, "export_raw_to_docx", lambda *args, **kwargs: None)
+    
+    monkeypatch.setattr(steps.config, "STEP1_AGENT_SKILL", "non-existent-skill-name")
+
+    result = steps.run_step_1(str(input_file), str(tmp_path / "output"), num_segments=70)
+
+    assert result["success"] is True
+    assert captured["skill_path"].endswith("skills/sample_writer")
+
